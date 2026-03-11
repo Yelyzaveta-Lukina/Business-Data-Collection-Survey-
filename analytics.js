@@ -61,14 +61,24 @@ const businessCanvas = document.getElementById("businessChart");
 const employeesCanvas = document.getElementById("employeesChart");
 const totalBusinessesEl = document.getElementById("totalBusinesses");
 const totalEmployeesEl = document.getElementById("totalEmployees");
+
 const compareQuarterAEl = document.getElementById("compareQuarterA");
 const compareQuarterBEl = document.getElementById("compareQuarterB");
 const businessChangeEl = document.getElementById("businessChange");
 const employeeChangeEl = document.getElementById("employeeChange");
 const comparisonSummaryEl = document.getElementById("comparisonSummary");
+const businessCompareCanvas = document.getElementById("businessCompareChart");
+const employeesCompareCanvas = document.getElementById("employeesCompareChart");
+
+const topGrowthIndustryEl = document.getElementById("topGrowthIndustry");
+const topGrowthDetailEl = document.getElementById("topGrowthDetail");
+const topDeclineIndustryEl = document.getElementById("topDeclineIndustry");
+const topDeclineDetailEl = document.getElementById("topDeclineDetail");
 
 let businessChart = null;
 let employeesChart = null;
+let businessCompareChart = null;
+let employeesCompareChart = null;
 
 async function postForm(url, paramsObj) {
   const body = new URLSearchParams();
@@ -137,6 +147,69 @@ function calculatePercentChange(oldValue, newValue) {
   return ((newValue - oldValue) / oldValue) * 100;
 }
 
+function quarterToText(q) {
+  const map = {
+    Q1: "the first quarter",
+    Q2: "the second quarter",
+    Q3: "the third quarter",
+    Q4: "the fourth quarter"
+  };
+  return map[q] || q;
+}
+
+
+function setChangeStyle(el, value) {
+  el.classList.remove("analyticsTotalCard__value--positive", "analyticsTotalCard__value--negative");
+
+  if (value > 0) {
+    el.classList.add("analyticsTotalCard__value--positive");
+  } else if (value < 0) {
+    el.classList.add("analyticsTotalCard__value--negative");
+  }
+}
+
+function findTopGrowth(fields, attrsA, attrsB) {
+  let top = null;
+
+  fields.forEach(f => {
+    const a = Number(attrsA[f.name] ?? 0);
+    const b = Number(attrsB[f.name] ?? 0);
+    const diff = b - a;
+
+    if (!top || diff > top.diff) {
+      top = {
+        label: f.label,
+        diff,
+        from: a,
+        to: b
+      };
+    }
+  });
+
+  return top;
+}
+
+function findTopDecline(fields, attrsA, attrsB) {
+  let top = null;
+
+  fields.forEach(f => {
+    const a = Number(attrsA[f.name] ?? 0);
+    const b = Number(attrsB[f.name] ?? 0);
+    const diff = b - a;
+
+    if (!top || diff < top.diff) {
+      top = {
+        label: f.label,
+        diff,
+        from: a,
+        to: b
+      };
+    }
+  });
+
+  return top;
+}
+
 function destroyChart(chart) {
   if (chart) chart.destroy();
 }
@@ -157,11 +230,42 @@ function createHorizontalBarChart(canvas, title, labels, values) {
       maintainAspectRatio: false,
       indexAxis: "y",
       plugins: {
-        legend: {
-          display: false
+        legend: { display: false },
+        title: { display: false }
+      },
+      scales: {
+        x: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+function createComparisonBarChart(canvas, labelA, labelB, labels, valuesA, valuesB) {
+  return new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: labelA,
+          data: valuesA,
+          borderWidth: 1
         },
-        title: {
-          display: false
+        {
+          label: labelB,
+          data: valuesB,
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: "y",
+      plugins: {
+        legend: {
+          display: true,
+          position: "top"
         }
       },
       scales: {
@@ -181,15 +285,14 @@ async function loadAnalytics() {
     getQuarterAttributes(EMPLOYEES_LAYER_URL, quarter, EMPLOYEE_FIELDS)
   ]);
 
+  const totalBusinesses = sumValues(businessAttrs, BUSINESS_FIELDS);
+  const totalEmployees = sumValues(employeeAttrs, EMPLOYEE_FIELDS);
 
-    const totalBusinesses = sumValues(businessAttrs, BUSINESS_FIELDS);
-    const totalEmployees = sumValues(employeeAttrs, EMPLOYEE_FIELDS);
+  totalBusinessesEl.textContent = totalBusinesses.toLocaleString();
+  totalEmployeesEl.textContent = totalEmployees.toLocaleString();
 
-    totalBusinessesEl.textContent = totalBusinesses.toLocaleString();
-    totalEmployeesEl.textContent = totalEmployees.toLocaleString();
-
-    const businessData = buildChartData(businessAttrs, BUSINESS_FIELDS);
-    const employeeData = buildChartData(employeeAttrs, EMPLOYEE_FIELDS);
+  const businessData = buildChartData(businessAttrs, BUSINESS_FIELDS);
+  const employeeData = buildChartData(employeeAttrs, EMPLOYEE_FIELDS);
 
   destroyChart(businessChart);
   destroyChart(employeesChart);
@@ -209,20 +312,33 @@ async function loadAnalytics() {
   );
 }
 
-function quarterToText(q){
-  const map = {
-    Q1: "the first quarter",
-    Q2: "the second quarter",
-    Q3: "the third quarter",
-    Q4: "the fourth quarter"
-  };
-
-  return map[q] || q;
-}
-
 async function loadComparisonAnalytics() {
   const quarterA = compareQuarterAEl.value;
   const quarterB = compareQuarterBEl.value;
+
+  if (quarterA === quarterB) {
+    businessChangeEl.textContent = "--";
+    employeeChangeEl.textContent = "--";
+    topGrowthIndustryEl.textContent = "--";
+    topGrowthDetailEl.textContent = "--";
+    topDeclineIndustryEl.textContent = "--";
+    topDeclineDetailEl.textContent = "--";
+
+    businessChangeEl.classList.remove("analyticsTotalCard__value--positive", "analyticsTotalCard__value--negative");
+    employeeChangeEl.classList.remove("analyticsTotalCard__value--positive", "analyticsTotalCard__value--negative");
+
+    comparisonSummaryEl.textContent = "Please select two different quarters to compare.";
+    comparisonSummaryEl.classList.add("comparisonSummary--warn");
+
+    destroyChart(businessCompareChart);
+    destroyChart(employeesCompareChart);
+    businessCompareChart = null;
+    employeesCompareChart = null;
+
+    return;
+  }
+
+  comparisonSummaryEl.classList.remove("comparisonSummary--warn");
 
   const [businessAttrsA, businessAttrsB, employeeAttrsA, employeeAttrsB] = await Promise.all([
     getQuarterAttributes(BUSINESS_LAYER_URL, quarterA, BUSINESS_FIELDS),
@@ -233,9 +349,13 @@ async function loadComparisonAnalytics() {
 
   const totalBusinessesA = sumValues(businessAttrsA, BUSINESS_FIELDS);
   const totalBusinessesB = sumValues(businessAttrsB, BUSINESS_FIELDS);
-
   const totalEmployeesA = sumValues(employeeAttrsA, EMPLOYEE_FIELDS);
   const totalEmployeesB = sumValues(employeeAttrsB, EMPLOYEE_FIELDS);
+
+  const businessDataA = buildChartData(businessAttrsA, BUSINESS_FIELDS);
+  const businessDataB = buildChartData(businessAttrsB, BUSINESS_FIELDS);
+  const employeeDataA = buildChartData(employeeAttrsA, EMPLOYEE_FIELDS);
+  const employeeDataB = buildChartData(employeeAttrsB, EMPLOYEE_FIELDS);
 
   const businessChange = totalBusinessesB - totalBusinessesA;
   const employeeChange = totalEmployeesB - totalEmployeesA;
@@ -249,15 +369,75 @@ async function loadComparisonAnalytics() {
   employeeChangeEl.textContent =
     `${formatSignedNumber(employeeChange)} (${formatSignedPercent(employeePercent)})`;
 
+  setChangeStyle(businessChangeEl, businessChange);
+  setChangeStyle(employeeChangeEl, employeeChange);
+
   const quarterAText = quarterToText(quarterA);
   const quarterBText = quarterToText(quarterB);
+
+  const businessDirection =
+    businessChange > 0 ? "increased" :
+    businessChange < 0 ? "decreased" :
+    "did not change";
+
+  const employeeDirection =
+    employeeChange > 0 ? "increased" :
+    employeeChange < 0 ? "decreased" :
+    "did not change";
 
   comparisonSummaryEl.textContent =
     `During ${quarterAText}, total businesses were ${totalBusinessesA.toLocaleString()} and total employees were ${totalEmployeesA.toLocaleString()}. ` +
     `During ${quarterBText}, total businesses were ${totalBusinessesB.toLocaleString()} and total employees were ${totalEmployeesB.toLocaleString()}. ` +
-    `This represents a ${businessChange >= 0 ? "change of +" : "change of "}${businessChange.toLocaleString()} businesses ` +
-    `(${formatSignedPercent(businessPercent)}) and a ${employeeChange >= 0 ? "change of +" : "change of "}${employeeChange.toLocaleString()} employees ` +
-    `(${formatSignedPercent(employeePercent)}).`;
+    `From ${quarterAText} to ${quarterBText}, the number of businesses ${businessDirection} by ${Math.abs(businessChange).toLocaleString()} (${formatSignedPercent(businessPercent)}), ` +
+    `while total employees ${employeeDirection} by ${Math.abs(employeeChange).toLocaleString()} (${formatSignedPercent(employeePercent)}).`;
+
+  const topGrowth = findTopGrowth(BUSINESS_FIELDS, businessAttrsA, businessAttrsB);
+  const topDecline = findTopDecline(BUSINESS_FIELDS, businessAttrsA, businessAttrsB);
+
+  if (topGrowth && topGrowth.diff > 0) {
+    topGrowthIndustryEl.textContent = topGrowth.label;
+    topGrowthDetailEl.textContent =
+      `+${topGrowth.diff.toLocaleString()} from ${topGrowth.from.toLocaleString()} to ${topGrowth.to.toLocaleString()}`;
+  } else if (topGrowth && topGrowth.diff === 0) {
+    topGrowthIndustryEl.textContent = "No growth";
+    topGrowthDetailEl.textContent = "No industry increased between selected quarters.";
+  } else {
+    topGrowthIndustryEl.textContent = "No growth";
+    topGrowthDetailEl.textContent = "All industries declined or stayed the same.";
+  }
+
+  if (topDecline && topDecline.diff < 0) {
+    topDeclineIndustryEl.textContent = topDecline.label;
+    topDeclineDetailEl.textContent =
+      `${topDecline.diff.toLocaleString()} from ${topDecline.from.toLocaleString()} to ${topDecline.to.toLocaleString()}`;
+  } else if (topDecline && topDecline.diff === 0) {
+    topDeclineIndustryEl.textContent = "No decline";
+    topDeclineDetailEl.textContent = "No industry decreased between selected quarters.";
+  } else {
+    topDeclineIndustryEl.textContent = "No decline";
+    topDeclineDetailEl.textContent = "All industries increased or stayed the same.";
+  }
+
+  destroyChart(businessCompareChart);
+  destroyChart(employeesCompareChart);
+
+  businessCompareChart = createComparisonBarChart(
+    businessCompareCanvas,
+    quarterA,
+    quarterB,
+    businessDataA.labels,
+    businessDataA.values,
+    businessDataB.values
+  );
+
+  employeesCompareChart = createComparisonBarChart(
+    employeesCompareCanvas,
+    quarterA,
+    quarterB,
+    employeeDataA.labels,
+    employeeDataA.values,
+    employeeDataB.values
+  );
 }
 
 quarterEl.addEventListener("change", () => {
