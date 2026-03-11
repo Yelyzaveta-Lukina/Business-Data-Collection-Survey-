@@ -53,6 +53,63 @@
       </div>
     </section>
 
+
+    <section class="card analyticsChartCard">
+      <h2 class="analyticsPageTitle">Quarter Comparison</h2>
+
+      <div class="comparisonSelectors">
+      <div>
+        <label class="label" for="compareQuarterA">Quarter A</label>
+        <select id="compareQuarterA" class="input">
+          <option value="Q1">Q1 (Jan–Mar)</option>
+          <option value="Q2">Q2 (Apr–Jun)</option>
+          <option value="Q3">Q3 (Jul–Sep)</option>
+          <option value="Q4">Q4 (Oct–Dec)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="label" for="compareQuarterB">Quarter B</label>
+        <select id="compareQuarterB" class="input">
+          <option value="Q1">Q1 (Jan–Mar)</option>
+          <option value="Q2">Q2 (Apr–Jun)</option>
+          <option value="Q3">Q3 (Jul–Sep)</option>
+          <option value="Q4">Q4 (Oct–Dec)</option>
+        </select>
+      </div>
+    </div>
+
+    <section class="analyticsTotals comparisonTotals">
+      <div class="card analyticsTotalCard">
+        <div class="analyticsTotalCard__label">Business Change</div>
+        <div id="businessChange" class="analyticsTotalCard__value">--</div>
+      </div>
+
+      <div class="card analyticsTotalCard">
+        <div class="analyticsTotalCard__label">Employee Change</div>
+        <div id="employeeChange" class="analyticsTotalCard__value">--</div>
+      </div>
+    </section>
+
+    <div id="comparisonSummary" class="comparisonSummary">
+      Select two quarters to compare business and employee changes.
+    </div>
+
+    <section class="card analyticsChartInner">
+      <h3 class="analyticsCardTitle">Businesses Comparison by Industry</h3>
+      <div class="analyticsCanvasWrap">
+        <canvas id="businessCompareChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card analyticsChartInner">
+      <h3 class="analyticsCardTitle">Employees Comparison by Industry</h3>
+      <div class="analyticsCanvasWrap">
+        <canvas id="employeesCompareChart"></canvas>
+      </div>
+    </section>
+  </section>
+
   </main>
 
   <script src="analytics.js"></script>

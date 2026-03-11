@@ -61,6 +61,11 @@ const businessCanvas = document.getElementById("businessChart");
 const employeesCanvas = document.getElementById("employeesChart");
 const totalBusinessesEl = document.getElementById("totalBusinesses");
 const totalEmployeesEl = document.getElementById("totalEmployees");
+const compareQuarterAEl = document.getElementById("compareQuarterA");
+const compareQuarterBEl = document.getElementById("compareQuarterB");
+const businessChangeEl = document.getElementById("businessChange");
+const employeeChangeEl = document.getElementById("employeeChange");
+const comparisonSummaryEl = document.getElementById("comparisonSummary");
 
 let businessChart = null;
 let employeesChart = null;
@@ -112,6 +117,24 @@ function buildChartData(attributes, fields) {
 
 function sumValues(attributes, fields) {
   return fields.reduce((sum, f) => sum + Number(attributes[f.name] ?? 0), 0);
+}
+
+function formatSignedNumber(value) {
+  const sign = value > 0 ? "+" : "";
+  return sign + value.toLocaleString();
+}
+
+function formatSignedPercent(value) {
+  const sign = value > 0 ? "+" : "";
+  return sign + value.toFixed(1) + "%";
+}
+
+function calculatePercentChange(oldValue, newValue) {
+  if (oldValue === 0) {
+    if (newValue === 0) return 0;
+    return 100;
+  }
+  return ((newValue - oldValue) / oldValue) * 100;
 }
 
 function destroyChart(chart) {
@@ -186,6 +209,57 @@ async function loadAnalytics() {
   );
 }
 
+function quarterToText(q){
+  const map = {
+    Q1: "the first quarter",
+    Q2: "the second quarter",
+    Q3: "the third quarter",
+    Q4: "the fourth quarter"
+  };
+
+  return map[q] || q;
+}
+
+async function loadComparisonAnalytics() {
+  const quarterA = compareQuarterAEl.value;
+  const quarterB = compareQuarterBEl.value;
+
+  const [businessAttrsA, businessAttrsB, employeeAttrsA, employeeAttrsB] = await Promise.all([
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarterA, BUSINESS_FIELDS),
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarterB, BUSINESS_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterA, EMPLOYEE_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterB, EMPLOYEE_FIELDS)
+  ]);
+
+  const totalBusinessesA = sumValues(businessAttrsA, BUSINESS_FIELDS);
+  const totalBusinessesB = sumValues(businessAttrsB, BUSINESS_FIELDS);
+
+  const totalEmployeesA = sumValues(employeeAttrsA, EMPLOYEE_FIELDS);
+  const totalEmployeesB = sumValues(employeeAttrsB, EMPLOYEE_FIELDS);
+
+  const businessChange = totalBusinessesB - totalBusinessesA;
+  const employeeChange = totalEmployeesB - totalEmployeesA;
+
+  const businessPercent = calculatePercentChange(totalBusinessesA, totalBusinessesB);
+  const employeePercent = calculatePercentChange(totalEmployeesA, totalEmployeesB);
+
+  businessChangeEl.textContent =
+    `${formatSignedNumber(businessChange)} (${formatSignedPercent(businessPercent)})`;
+
+  employeeChangeEl.textContent =
+    `${formatSignedNumber(employeeChange)} (${formatSignedPercent(employeePercent)})`;
+
+  const quarterAText = quarterToText(quarterA);
+  const quarterBText = quarterToText(quarterB);
+
+  comparisonSummaryEl.textContent =
+    `During ${quarterAText}, total businesses were ${totalBusinessesA.toLocaleString()} and total employees were ${totalEmployeesA.toLocaleString()}. ` +
+    `During ${quarterBText}, total businesses were ${totalBusinessesB.toLocaleString()} and total employees were ${totalEmployeesB.toLocaleString()}. ` +
+    `This represents a ${businessChange >= 0 ? "change of +" : "change of "}${businessChange.toLocaleString()} businesses ` +
+    `(${formatSignedPercent(businessPercent)}) and a ${employeeChange >= 0 ? "change of +" : "change of "}${employeeChange.toLocaleString()} employees ` +
+    `(${formatSignedPercent(employeePercent)}).`;
+}
+
 quarterEl.addEventListener("change", () => {
   loadAnalytics().catch(err => {
     console.error(err);
@@ -193,7 +267,26 @@ quarterEl.addEventListener("change", () => {
   });
 });
 
+compareQuarterAEl.addEventListener("change", () => {
+  loadComparisonAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load comparison analytics: " + err.message);
+  });
+});
+
+compareQuarterBEl.addEventListener("change", () => {
+  loadComparisonAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load comparison analytics: " + err.message);
+  });
+});
+
 loadAnalytics().catch(err => {
   console.error(err);
   alert("Could not load analytics: " + err.message);
+});
+
+loadComparisonAnalytics().catch(err => {
+  console.error(err);
+  alert("Could not load comparison analytics: " + err.message);
 });
