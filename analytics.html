@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Industry Analytics</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <main class="wrap">
+
+    <header class="header">
+      <div class="header__top">CITY OF CORAL GABLES</div>
+      <div class="header__title">Industry Analytics</div>
+    </header>
+
+    <section class="card">
+      <label class="label" for="analyticsQuarter">Quarter</label>
+      <select id="analyticsQuarter" class="input">
+        <option value="Q1">Q1 (Jan–Mar)</option>
+        <option value="Q2">Q2 (Apr–Jun)</option>
+        <option value="Q3">Q3 (Jul–Sep)</option>
+        <option value="Q4">Q4 (Oct–Dec)</option>
+      </select>
+      <div class="hint">Select a quarter to view analytics.</div>
+    </section>
+
+    <section class="analyticsTotals">
+        <div class="card analyticsTotalCard">
+            <div class="analyticsTotalCard__label">Total Businesses</div>
+            <div id="totalBusinesses" class="analyticsTotalCard__value">--</div>
+        </div>
+
+        <div class="card analyticsTotalCard">
+            <div class="analyticsTotalCard__label">Total Employees</div>
+            <div id="totalEmployees" class="analyticsTotalCard__value">--</div>
+        </div>
+    </section>
+
+    <section class="card analyticsChartCard">
+      <h2 class="analyticsPageTitle">Businesses by Industry</h2>
+      <div class="analyticsCanvasWrap">
+        <canvas id="businessChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card analyticsChartCard">
+      <h2 class="analyticsPageTitle">Employees by Industry</h2>
+      <div class="analyticsCanvasWrap">
+        <canvas id="employeesChart"></canvas>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="analytics.js"></script>
+</body>
+</html>

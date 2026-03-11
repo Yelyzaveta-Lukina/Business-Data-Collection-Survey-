@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Business & Employees by Industry Survey</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <main class="wrap">
+    <header class="header">
+      <div class="header__top">CITY OF CORAL GABLES</div>
+      <div class="header__title">Business Data Collection Survey</div>
+    </header>
+
+   <section class="card">
+
+    <label class="label" for="surveyDate">Survey date</label>
+    <input id="surveyDate" type="date" class="input" />
+    <div class="hint">Defaults to today. Change only if needed.</div>
+
+    <label class="label fieldSpace" for="quarterSelect">Quarter</label>
+    <select id="quarterSelect" class="input">
+      <option value="">Select quarter</option>
+      <option value="Q1">Q1 (Jan–Mar)</option>
+      <option value="Q2">Q2 (Apr–Jun)</option>
+      <option value="Q3">Q3 (Jul–Sep)</option>
+      <option value="Q4">Q4 (Oct–Dec)</option>
+    </select>
+    <div class="hint">Please select a quarter.</div>
+
+    </section>
+
+    <section class="tabs">
+      <button id="btnBusiness" class="tab tab--active" type="button">Businesses by Industry</button>
+      <button id="btnEmployees" class="tab" type="button">Employees by Industry</button>
+    </section>
+
+    <section class="sheet card">
+      <div class="sheet__head">
+        <h2 id="sheetTitle" class="sheet__title">Businesses by Industry</h2>
+      </div>
+
+
+     <div class="gridHead">
+      <div class="gridHead__left">Industry</div>
+
+      <div class="gridHead__right">
+        <span>Value</span>
+
+        <button id="clearSheet" class="btn btn--secondary clearTopBtn" type="button">
+          Clear
+        </button>
+      </div>
+    </div>
+
+      <div id="rows" class="rows"></div>
+
+      <div class="sheet__actions">
+
+        <div class="sheet__buttons">
+
+          <button id="analyticsBtn" class="btn btn--secondary" type="button">
+            Analytics
+          </button>
+
+          <button id="saveSheet" class="btn btn--primary" type="button">
+            Save Changes
+          </button>
+
+
+        </div>
+
+        <div id="sheetStatus" class="status" aria-live="polite"></div>
+
+      </div>
+
+    </section>
+
+    <div class="foot">Internal use • Updates are saved to ArcGIS hosted layers</div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
