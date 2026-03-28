@@ -148,23 +148,15 @@ body{
   justify-content:space-between;
 }
 
-.row{
-  grid-template-columns: 1fr 160px;
-}
-
-/* Rows */
-.rows{
-  margin-top: 10px;
-  display:flex;
-  flex-direction:column;
+.rows {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-}
 
-/* Dividing lines between rows */
-.rows{
   border-top: 1px solid var(--line);
   margin-top: 12px;
 }
+
 .row{
   display:grid;
   grid-template-columns: 1fr 160px;
@@ -229,12 +221,6 @@ body{
   min-width:140px;
 }
 
-.btn--primary{
-  background: var(--teal);
-  color:#fff;
-  border-color: var(--teal);
-}
-
 .btn--secondary{
   background:#fff;
   color:#111;
@@ -261,12 +247,6 @@ body{
 
 .fieldSpace{
   margin-top:16px;
-}
-
-.btn--secondary{
-  background:#fff;
-  border:2px solid var(--teal);
-  color:#111;
 }
 
 .analyticsChartCard{
@@ -365,6 +345,18 @@ body{
   color:#b42318;
 }
 
+.trendSelectors{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:16px;
+  margin-top:16px;
+  margin-bottom:16px;
+}
+
+.analyticsCanvasWrap--medium{
+  height: 420px;
+}
+
 .comparisonSummary--warn{
   background:#fff2e8;
   border:1px solid rgba(212,107,8,.35);
@@ -373,4 +365,27 @@ body{
 
 .comparisonTotals--four{
   grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.trendMiniCards{
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.trendChartSection{
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.trendSummaryBox{
+  margin-top: 20px;
+}
+
+@media (max-width: 700px){
+  .trendSelectors,
+  .comparisonSelectors,
+  .comparisonTotals--four,
+  .analyticsTotals{
+    grid-template-columns: 1fr;
+  }
 }

@@ -122,6 +122,52 @@
     </section>
   </section>
 
+  <section class="card analyticsChartCard">
+  <h2 class="analyticsPageTitle">Quarterly Trend by Industry</h2>
+  <div class="hint">Select a data type and industry to view the trend across Q1–Q4.</div>
+
+  <div class="trendSelectors">
+    <div>
+      <label class="label" for="trendType">Data Type</label>
+      <select id="trendType" class="input">
+        <option value="business">Businesses</option>
+        <option value="employees">Employees</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="label" for="trendIndustry">Industry</label>
+      <select id="trendIndustry" class="input"></select>
+    </div>
+  </div>
+
+    <section class="analyticsTotals trendMiniCards">
+    <div class="card analyticsTotalCard">
+      <div class="analyticsTotalCard__label">Highest Quarter</div>
+      <div id="trendHighestQuarter" class="analyticsTotalCard__value analyticsTotalCard__value--small">--</div>
+      <div id="trendHighestValue" class="analyticsTotalCard__detail">--</div>
+    </div>
+
+    <div class="card analyticsTotalCard">
+      <div class="analyticsTotalCard__label">Lowest Quarter</div>
+      <div id="trendLowestQuarter" class="analyticsTotalCard__value analyticsTotalCard__value--small">--</div>
+      <div id="trendLowestValue" class="analyticsTotalCard__detail">--</div>
+    </div>
+  </section>
+
+  <div class="card analyticsChartInner trendChartSection">
+    <h3 class="analyticsCardTitle">Trend Across Quarters</h3>
+    <div class="analyticsCanvasWrap analyticsCanvasWrap--medium">
+      <canvas id="trendLineChart"></canvas>
+    </div>
+  </div>
+
+  <div id="trendSummary" class="comparisonSummary trendSummaryBox">
+    Select a data type and industry to view quarterly trend details.
+  </div>
+
+</section>
+
   </main>
 
   <script src="analytics.js"></script>

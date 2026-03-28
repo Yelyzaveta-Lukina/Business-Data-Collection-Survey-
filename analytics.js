@@ -75,10 +75,22 @@ const topGrowthDetailEl = document.getElementById("topGrowthDetail");
 const topDeclineIndustryEl = document.getElementById("topDeclineIndustry");
 const topDeclineDetailEl = document.getElementById("topDeclineDetail");
 
+const trendTypeEl = document.getElementById("trendType");
+const trendIndustryEl = document.getElementById("trendIndustry");
+const trendLineCanvas = document.getElementById("trendLineChart");
+const trendSummaryEl = document.getElementById("trendSummary");
+
+const trendHighestQuarterEl = document.getElementById("trendHighestQuarter");
+const trendHighestValueEl = document.getElementById("trendHighestValue");
+const trendLowestQuarterEl = document.getElementById("trendLowestQuarter");
+const trendLowestValueEl = document.getElementById("trendLowestValue");
+
+
 let businessChart = null;
 let employeesChart = null;
 let businessCompareChart = null;
 let employeesCompareChart = null;
+let trendLineChart = null;
 
 async function postForm(url, paramsObj) {
   const body = new URLSearchParams();
@@ -213,6 +225,164 @@ function findTopDecline(fields, attrsA, attrsB) {
 function destroyChart(chart) {
   if (chart) chart.destroy();
 }
+
+function getTrendFieldsByType(type) {
+  return type === "business" ? BUSINESS_FIELDS : EMPLOYEE_FIELDS;
+}
+
+function getTrendLayerUrlByType(type) {
+  return type === "business" ? BUSINESS_LAYER_URL : EMPLOYEES_LAYER_URL;
+}
+
+function populateTrendIndustryOptions() {
+  const type = trendTypeEl.value;
+  const fields = getTrendFieldsByType(type);
+
+  trendIndustryEl.innerHTML = "";
+
+  fields.forEach(field => {
+    const option = document.createElement("option");
+    option.value = field.name;
+    option.textContent = field.label;
+    trendIndustryEl.appendChild(option);
+  });
+}
+
+async function getAllQuarterAttributes(layerUrl, fields) {
+  const quarters = ["Q1", "Q2", "Q3", "Q4"];
+
+  const results = await Promise.all(
+    quarters.map(q => getQuarterAttributes(layerUrl, q, fields))
+  );
+
+  return {
+    quarters,
+    attributesList: results
+  };
+}
+
+function createTrendLineChart(canvas, label, labels, values) {
+  return new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data: values,
+        tension: 0.25,
+        fill: false,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "top"
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function buildTrendSummary(typeLabel, industryLabel, quarterLabels, values) {
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const firstValue = values[0];
+  const lastValue = values[values.length - 1];
+  const diff = lastValue - firstValue;
+
+  const minQuarter = quarterLabels[values.indexOf(minValue)];
+  const maxQuarter = quarterLabels[values.indexOf(maxValue)];
+
+  let directionText = "did not change";
+  if (diff > 0) directionText = `increased by ${diff.toLocaleString()}`;
+  if (diff < 0) directionText = `decreased by ${Math.abs(diff).toLocaleString()}`;
+
+  return `${typeLabel} in ${industryLabel} ranged from ${minValue.toLocaleString()} in ${minQuarter} to ${maxValue.toLocaleString()} in ${maxQuarter}. From ${quarterLabels[0]} to ${quarterLabels[quarterLabels.length - 1]}, the value ${directionText}.`;
+}
+
+function getHighestQuarterInfo(quarterLabels, values) {
+  const maxValue = Math.max(...values);
+  const maxIndex = values.indexOf(maxValue);
+
+  return {
+    quarter: quarterLabels[maxIndex],
+    value: maxValue
+  };
+}
+
+function getLowestQuarterInfo(quarterLabels, values) {
+  const minValue = Math.min(...values);
+  const minIndex = values.indexOf(minValue);
+
+  return {
+    quarter: quarterLabels[minIndex],
+    value: minValue
+  };
+}
+
+
+async function loadTrendAnalytics() {
+  const type = trendTypeEl.value;
+  const fields = getTrendFieldsByType(type);
+  const layerUrl = getTrendLayerUrlByType(type);
+  const selectedFieldName = trendIndustryEl.value;
+
+  const selectedField = fields.find(f => f.name === selectedFieldName);
+  if (!selectedField) {
+    trendSummaryEl.textContent = "Please select an industry.";
+    trendHighestQuarterEl.textContent = "--";
+    trendHighestValueEl.textContent = "--";
+    trendLowestQuarterEl.textContent = "--";
+    trendLowestValueEl.textContent = "--";
+    destroyChart(trendLineChart);
+    trendLineChart = null;
+    return;
+  }
+
+  const { quarters, attributesList } = await getAllQuarterAttributes(layerUrl, fields);
+
+  const values = attributesList.map(attrs => Number(attrs[selectedFieldName] ?? 0));
+  const typeLabel = type === "business" ? "Businesses" : "Employees";
+
+  const highest = getHighestQuarterInfo(quarters, values);
+  const lowest = getLowestQuarterInfo(quarters, values);
+
+  trendHighestQuarterEl.textContent = highest.quarter;
+  trendHighestValueEl.textContent =
+    `${highest.value.toLocaleString()} ${type === "business" ? "businesses" : "employees"}`;
+
+  trendLowestQuarterEl.textContent = lowest.quarter;
+  trendLowestValueEl.textContent =
+    `${lowest.value.toLocaleString()} ${type === "business" ? "businesses" : "employees"}`;
+
+  destroyChart(trendLineChart);
+
+  trendLineChart = createTrendLineChart(
+    trendLineCanvas,
+    `${typeLabel} – ${selectedField.label}`,
+    quarters,
+    values
+  );
+
+  trendSummaryEl.textContent = buildTrendSummary(
+    typeLabel,
+    selectedField.label,
+    quarters,
+    values
+  );
+}
+
 
 function createHorizontalBarChart(canvas, title, labels, values) {
   return new Chart(canvas, {
@@ -461,6 +631,21 @@ compareQuarterBEl.addEventListener("change", () => {
   });
 });
 
+trendTypeEl.addEventListener("change", () => {
+  populateTrendIndustryOptions();
+  loadTrendAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load trend analytics: " + err.message);
+  });
+});
+
+trendIndustryEl.addEventListener("change", () => {
+  loadTrendAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load trend analytics: " + err.message);
+  });
+});
+
 loadAnalytics().catch(err => {
   console.error(err);
   alert("Could not load analytics: " + err.message);
@@ -469,4 +654,11 @@ loadAnalytics().catch(err => {
 loadComparisonAnalytics().catch(err => {
   console.error(err);
   alert("Could not load comparison analytics: " + err.message);
+});
+
+populateTrendIndustryOptions();
+
+loadTrendAnalytics().catch(err => {
+  console.error(err);
+  alert("Could not load trend analytics: " + err.message);
 });
