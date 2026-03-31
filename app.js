@@ -68,6 +68,7 @@ const sheetStatus = document.getElementById("sheetStatus");
 const quarterSelect = document.getElementById("quarterSelect");
 const clearBtn = document.getElementById("clearSheet");
 const analyticsBtn = document.getElementById("analyticsBtn");
+const yearSelect = document.getElementById("yearSelect");
 
 // 3) STATE
 let active = "business";
@@ -209,17 +210,17 @@ async function saveTotals(layerUrl, objectId, fieldsList, finalAttrs) {
 }
 
 
-async function getObjectIdByQuarter(layerUrl, quarter) {
+async function getObjectIdByQuarterYear(layerUrl, quarter, surveyYear) {
   const data = await postForm(`${layerUrl}/query`, {
     f: "json",
-    where: `quarter='${quarter}'`,
-    outFields: "OBJECTID,quarter",
+    where: `quarter='${quarter}' AND survey_year=${Number(surveyYear)}`,
+    outFields: "OBJECTID,quarter,survey_year",
     returnGeometry: "false"
   });
 
   const feat = data?.features?.[0];
   if (!feat?.attributes?.OBJECTID) {
-    throw new Error(`No record found for quarter ${quarter}`);
+    throw new Error(`No survey record exists yet for ${quarter} ${surveyYear}. Please choose a quarter/year that has been created in ArcGIS.`);
   }
 
   return feat.attributes.OBJECTID;
@@ -313,6 +314,12 @@ saveBtn.addEventListener("click", async () => {
       return;
     }
 
+    const surveyYear = yearSelect.value;
+    if (!surveyYear) {
+      showStatus("Please select a year before saving.", "err");
+      return;
+    }
+
     const isBusiness = active === "business";
     const fields = isBusiness ? BUSINESS_FIELDS : EMPLOYEE_FIELDS;
     const values = isBusiness ? businessValues : employeeValues;
@@ -326,9 +333,14 @@ saveBtn.addEventListener("click", async () => {
     }
 
     if (isBusiness) {
-      const oid = await getObjectIdByQuarter(BUSINESS_LAYER_URL, quarter);
+      const oid = await getObjectIdByQuarterYear(BUSINESS_LAYER_URL, quarter, surveyYear);
       const current = await loadTotals(BUSINESS_LAYER_URL, oid, BUSINESS_FIELDS);
-      const attrs = { OBJECTID: oid, quarter, survey_date: dateStr };
+      const attrs = { 
+        OBJECTID: oid,
+        quarter,
+        survey_year: Number(surveyYear),
+        survey_date: dateStr
+      };    
 
       BUSINESS_FIELDS.forEach(f => {
         attrs[f.name] = businessTouched[f.name]
@@ -340,9 +352,14 @@ saveBtn.addEventListener("click", async () => {
       showStatus("Businesses saved successfully ✅", "ok");
       BUSINESS_FIELDS.forEach(f => (businessTouched[f.name] = false));
     } else {
-      const oid = await getObjectIdByQuarter(EMPLOYEES_LAYER_URL, quarter);
-      const current = await loadTotals(EMPLOYEES_LAYER_URL, oid, EMPLOYEE_FIELDS);
-      const attrs = { OBJECTID: oid, quarter, survey_date: dateStr };
+        const oid = await getObjectIdByQuarterYear(EMPLOYEES_LAYER_URL, quarter, surveyYear);
+        const current = await loadTotals(EMPLOYEES_LAYER_URL, oid, EMPLOYEE_FIELDS);
+        const attrs = {
+          OBJECTID: oid,
+          quarter,
+          survey_year: Number(surveyYear),
+          survey_date: dateStr
+        };
 
       EMPLOYEE_FIELDS.forEach(f => {
         attrs[f.name] = employeeTouched[f.name]

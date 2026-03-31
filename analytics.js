@@ -85,6 +85,11 @@ const trendHighestValueEl = document.getElementById("trendHighestValue");
 const trendLowestQuarterEl = document.getElementById("trendLowestQuarter");
 const trendLowestValueEl = document.getElementById("trendLowestValue");
 
+const analyticsYearEl = document.getElementById("analyticsYear");
+const compareYearAEl = document.getElementById("compareYearA");
+const compareYearBEl = document.getElementById("compareYearB");
+const trendYearEl = document.getElementById("trendYear");
+
 
 let businessChart = null;
 let employeesChart = null;
@@ -107,19 +112,19 @@ async function postForm(url, paramsObj) {
   return data;
 }
 
-async function getQuarterAttributes(layerUrl, quarter, fields) {
-  const outFields = ["quarter", "survey_date", ...fields.map(f => f.name)].join(",");
+async function getQuarterAttributes(layerUrl, quarter, surveyYear, fields) {
+  const outFields = ["quarter", "survey_year", "survey_date", ...fields.map(f => f.name)].join(",");
 
   const data = await postForm(`${layerUrl}/query`, {
     f: "json",
-    where: `quarter='${quarter}'`,
+    where: `quarter='${quarter}' AND survey_year=${Number(surveyYear)}`,
     outFields,
     returnGeometry: "false"
   });
 
   const feat = data?.features?.[0];
   if (!feat?.attributes) {
-    throw new Error(`No record found for ${quarter}`);
+    throw new Error(`No record found for ${quarter} ${surveyYear}`);
   }
 
   return feat.attributes;
@@ -159,14 +164,16 @@ function calculatePercentChange(oldValue, newValue) {
   return ((newValue - oldValue) / oldValue) * 100;
 }
 
-function quarterToText(q) {
+function quarterToText(q, year) {
   const map = {
     Q1: "the first quarter",
     Q2: "the second quarter",
     Q3: "the third quarter",
     Q4: "the fourth quarter"
   };
-  return map[q] || q;
+
+  const quarterText = map[q] || q;
+  return year ? `${quarterText} of ${year}` : quarterText;
 }
 
 
@@ -248,11 +255,11 @@ function populateTrendIndustryOptions() {
   });
 }
 
-async function getAllQuarterAttributes(layerUrl, fields) {
+async function getAllQuarterAttributes(layerUrl, surveyYear, fields) {
   const quarters = ["Q1", "Q2", "Q3", "Q4"];
 
   const results = await Promise.all(
-    quarters.map(q => getQuarterAttributes(layerUrl, q, fields))
+    quarters.map(q => getQuarterAttributes(layerUrl, q, surveyYear, fields))
   );
 
   return {
@@ -261,7 +268,7 @@ async function getAllQuarterAttributes(layerUrl, fields) {
   };
 }
 
-function createTrendLineChart(canvas, label, labels, values) {
+function createTrendLineChart(canvas, label, labels, values, yAxisLabel) {
   return new Chart(canvas, {
     type: "line",
     data: {
@@ -286,8 +293,18 @@ function createTrendLineChart(canvas, label, labels, values) {
         }
       },
       scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Quarter"
+          }
+        },
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: yAxisLabel
+          }
         }
       }
     }
@@ -333,24 +350,39 @@ function getLowestQuarterInfo(quarterLabels, values) {
 
 
 async function loadTrendAnalytics() {
+  const surveyYear = trendYearEl.value;
   const type = trendTypeEl.value;
   const fields = getTrendFieldsByType(type);
   const layerUrl = getTrendLayerUrlByType(type);
   const selectedFieldName = trendIndustryEl.value;
 
-  const selectedField = fields.find(f => f.name === selectedFieldName);
-  if (!selectedField) {
-    trendSummaryEl.textContent = "Please select an industry.";
+  if (!surveyYear || !selectedFieldName) {
+    trendSummaryEl.textContent = "Select a year, data type, and industry to view quarterly trend details.";
     trendHighestQuarterEl.textContent = "--";
     trendHighestValueEl.textContent = "--";
     trendLowestQuarterEl.textContent = "--";
     trendLowestValueEl.textContent = "--";
+
     destroyChart(trendLineChart);
     trendLineChart = null;
     return;
   }
 
-  const { quarters, attributesList } = await getAllQuarterAttributes(layerUrl, fields);
+  const selectedField = fields.find(f => f.name === selectedFieldName);
+
+  if (!selectedField) {
+    trendSummaryEl.textContent = "Please select a valid industry.";
+    trendHighestQuarterEl.textContent = "--";
+    trendHighestValueEl.textContent = "--";
+    trendLowestQuarterEl.textContent = "--";
+    trendLowestValueEl.textContent = "--";
+
+    destroyChart(trendLineChart);
+    trendLineChart = null;
+    return;
+  }
+
+  const { quarters, attributesList } = await getAllQuarterAttributes(layerUrl, surveyYear, fields);
 
   const values = attributesList.map(attrs => Number(attrs[selectedFieldName] ?? 0));
   const typeLabel = type === "business" ? "Businesses" : "Employees";
@@ -370,13 +402,14 @@ async function loadTrendAnalytics() {
 
   trendLineChart = createTrendLineChart(
     trendLineCanvas,
-    `${typeLabel} – ${selectedField.label}`,
+    `${typeLabel} – ${selectedField.label} (${surveyYear})`,
     quarters,
-    values
+    values,
+    type === "business" ? "Number of Businesses" : "Number of Employees"
   );
 
   trendSummaryEl.textContent = buildTrendSummary(
-    typeLabel,
+    `${typeLabel} in ${surveyYear}`,
     selectedField.label,
     quarters,
     values
@@ -385,6 +418,11 @@ async function loadTrendAnalytics() {
 
 
 function createHorizontalBarChart(canvas, title, labels, values) {
+  const xAxisLabel =
+    title.toLowerCase().includes("employee")
+      ? "Number of Employees"
+      : "Number of Businesses";
+
   return new Chart(canvas, {
     type: "bar",
     data: {
@@ -404,13 +442,19 @@ function createHorizontalBarChart(canvas, title, labels, values) {
         title: { display: false }
       },
       scales: {
-        x: { beginAtZero: true }
+        x: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: xAxisLabel
+          }
+        }
       }
     }
   });
 }
 
-function createComparisonBarChart(canvas, labelA, labelB, labels, valuesA, valuesB) {
+function createComparisonBarChart(canvas, labelA, labelB, labels, valuesA, valuesB, xAxisLabel) {
   return new Chart(canvas, {
     type: "bar",
     data: {
@@ -440,7 +484,11 @@ function createComparisonBarChart(canvas, labelA, labelB, labels, valuesA, value
       },
       scales: {
         x: {
-          beginAtZero: true
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: xAxisLabel
+          }
         }
       }
     }
@@ -449,10 +497,23 @@ function createComparisonBarChart(canvas, labelA, labelB, labels, valuesA, value
 
 async function loadAnalytics() {
   const quarter = quarterEl.value;
+  const surveyYear = analyticsYearEl.value;
+
+  if (!surveyYear || !quarter) {
+    totalBusinessesEl.textContent = "--";
+    totalEmployeesEl.textContent = "--";
+
+    destroyChart(businessChart);
+    destroyChart(employeesChart);
+    businessChart = null;
+    employeesChart = null;
+
+    return;
+  }
 
   const [businessAttrs, employeeAttrs] = await Promise.all([
-    getQuarterAttributes(BUSINESS_LAYER_URL, quarter, BUSINESS_FIELDS),
-    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarter, EMPLOYEE_FIELDS)
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarter, surveyYear, BUSINESS_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarter, surveyYear, EMPLOYEE_FIELDS)
   ]);
 
   const totalBusinesses = sumValues(businessAttrs, BUSINESS_FIELDS);
@@ -483,22 +544,19 @@ async function loadAnalytics() {
 }
 
 async function loadComparisonAnalytics() {
+  const yearA = compareYearAEl.value;
   const quarterA = compareQuarterAEl.value;
+  const yearB = compareYearBEl.value;
   const quarterB = compareQuarterBEl.value;
 
-  if (quarterA === quarterB) {
+  if (!yearA || !quarterA || !yearB || !quarterB) {
     businessChangeEl.textContent = "--";
     employeeChangeEl.textContent = "--";
     topGrowthIndustryEl.textContent = "--";
     topGrowthDetailEl.textContent = "--";
     topDeclineIndustryEl.textContent = "--";
     topDeclineDetailEl.textContent = "--";
-
-    businessChangeEl.classList.remove("analyticsTotalCard__value--positive", "analyticsTotalCard__value--negative");
-    employeeChangeEl.classList.remove("analyticsTotalCard__value--positive", "analyticsTotalCard__value--negative");
-
-    comparisonSummaryEl.textContent = "Please select two different quarters to compare.";
-    comparisonSummaryEl.classList.add("comparisonSummary--warn");
+    comparisonSummaryEl.textContent = "Select two year/quarter combinations to compare.";
 
     destroyChart(businessCompareChart);
     destroyChart(employeesCompareChart);
@@ -511,10 +569,10 @@ async function loadComparisonAnalytics() {
   comparisonSummaryEl.classList.remove("comparisonSummary--warn");
 
   const [businessAttrsA, businessAttrsB, employeeAttrsA, employeeAttrsB] = await Promise.all([
-    getQuarterAttributes(BUSINESS_LAYER_URL, quarterA, BUSINESS_FIELDS),
-    getQuarterAttributes(BUSINESS_LAYER_URL, quarterB, BUSINESS_FIELDS),
-    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterA, EMPLOYEE_FIELDS),
-    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterB, EMPLOYEE_FIELDS)
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarterA, yearA, BUSINESS_FIELDS),
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarterB, yearB, BUSINESS_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterA, yearA, EMPLOYEE_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterB, yearB, EMPLOYEE_FIELDS)
   ]);
 
   const totalBusinessesA = sumValues(businessAttrsA, BUSINESS_FIELDS);
@@ -542,8 +600,8 @@ async function loadComparisonAnalytics() {
   setChangeStyle(businessChangeEl, businessChange);
   setChangeStyle(employeeChangeEl, employeeChange);
 
-  const quarterAText = quarterToText(quarterA);
-  const quarterBText = quarterToText(quarterB);
+  const quarterAText = quarterToText(quarterA, yearA);
+  const quarterBText = quarterToText(quarterB, yearB);
 
   const businessDirection =
     businessChange > 0 ? "increased" :
@@ -597,7 +655,8 @@ async function loadComparisonAnalytics() {
     quarterB,
     businessDataA.labels,
     businessDataA.values,
-    businessDataB.values
+    businessDataB.values,
+    "Number of Businesses"
   );
 
   employeesCompareChart = createComparisonBarChart(
@@ -606,11 +665,19 @@ async function loadComparisonAnalytics() {
     quarterB,
     employeeDataA.labels,
     employeeDataA.values,
-    employeeDataB.values
+    employeeDataB.values,
+    "Number of Employees"
   );
 }
 
 quarterEl.addEventListener("change", () => {
+  loadAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load analytics: " + err.message);
+  });
+});
+
+analyticsYearEl.addEventListener("change", () => {
   loadAnalytics().catch(err => {
     console.error(err);
     alert("Could not load analytics: " + err.message);
@@ -631,6 +698,20 @@ compareQuarterBEl.addEventListener("change", () => {
   });
 });
 
+compareYearAEl.addEventListener("change", () => {
+  loadComparisonAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load comparison analytics: " + err.message);
+  });
+});
+
+compareYearBEl.addEventListener("change", () => {
+  loadComparisonAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load comparison analytics: " + err.message);
+  });
+});
+
 trendTypeEl.addEventListener("change", () => {
   populateTrendIndustryOptions();
   loadTrendAnalytics().catch(err => {
@@ -640,6 +721,13 @@ trendTypeEl.addEventListener("change", () => {
 });
 
 trendIndustryEl.addEventListener("change", () => {
+  loadTrendAnalytics().catch(err => {
+    console.error(err);
+    alert("Could not load trend analytics: " + err.message);
+  });
+});
+
+trendYearEl.addEventListener("change", () => {
   loadTrendAnalytics().catch(err => {
     console.error(err);
     alert("Could not load trend analytics: " + err.message);
