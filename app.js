@@ -3,8 +3,21 @@ const BUSINESS_LAYER_URL =
   "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Business_by_Industry/FeatureServer/0";
 const EMPLOYEES_LAYER_URL =
   "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Employees_by_Industry/FeatureServer/0";
+const ORIGIN_LAYER_URL = 
+  "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Employees_Origin_Type/FeatureServer/0";
+const OFFICE_MARKET_LAYER_URL = 
+"https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Office_Market_Stats_By_Class/FeatureServer/0";
 
-// Field names MUST match ArcGIS
+
+const MONTHS = [
+  "",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+
+
+  // Field names MUST match ArcGIS
 const BUSINESS_FIELDS = [
   { name: "professional_scientific_technical", label: "Professional, Scientific, and Technical Services" },
   { name: "finance_insurance", label: "Finance and Insurance" },
@@ -69,9 +82,21 @@ const quarterSelect = document.getElementById("quarterSelect");
 const clearBtn = document.getElementById("clearSheet");
 const analyticsBtn = document.getElementById("analyticsBtn");
 const yearSelect = document.getElementById("yearSelect");
+const originAreaTypeEl = document.getElementById("originAreaType");
+const originReportYearEl = document.getElementById("originReportYear");
+const originReportMonthEl = document.getElementById("originReportMonth");
+const originFileEl = document.getElementById("originFile");
+const originUploadBtn = document.getElementById("originUploadBtn");
+const originUploadStatus = document.getElementById("originUploadStatus");
+const officeAreaTypeEl = document.getElementById("officeAreaType");
+const officeClassAFileEl = document.getElementById("officeClassAFile");
+const officeClassBFileEl = document.getElementById("officeClassBFile");
+const officeUploadBtn = document.getElementById("officeUploadBtn");
+const officeUploadStatus = document.getElementById("officeUploadStatus");
 
 // 3) STATE
 let active = "business";
+let originUploadPreviewRecords = [];
 
 // Values user has typed (default 0)
 let businessValues = {};
@@ -97,6 +122,120 @@ function showStatus(msg, kind) {
   sheetStatus.className = "status " + (kind === "ok" ? "status--ok" : "status--err");
   sheetStatus.textContent = msg;
 }
+
+function showOriginUploadStatus(msg, kind) {
+  if (!msg) {
+    originUploadStatus.className = "status";
+    originUploadStatus.style.display = "none";
+    originUploadStatus.textContent = "";
+    return;
+  }
+
+  originUploadStatus.style.display = "block";
+  originUploadStatus.className = "status " + (kind === "ok" ? "status--ok" : "status--err");
+  originUploadStatus.textContent = msg;
+}
+
+
+function showOfficeUploadStatus(msg, kind) {
+  if (!msg) {
+    officeUploadStatus.className = "status";
+    officeUploadStatus.style.display = "none";
+    officeUploadStatus.textContent = "";
+    return;
+  }
+
+  officeUploadStatus.style.display = "block";
+  officeUploadStatus.className = "status " + (kind === "ok" ? "status--ok" : "status--err");
+  officeUploadStatus.textContent = msg;
+}
+
+
+function parseTotalSfValue(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+
+  const cleaned = raw
+    .replace(/\$/g, "")
+    .replace(/,/g, "")
+    .trim()
+    .toUpperCase();
+
+  if (cleaned.endsWith("M")) {
+    const n = Number(cleaned.slice(0, -1));
+    return Number.isFinite(n) ? n * 1000000 : null;
+  }
+
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+
+function extractYearQuarter(periodValue) {
+  const s = String(periodValue || "").toUpperCase();
+
+  const match = s.match(/(\d{4})\s*Q([1-4])/);
+  if (!match) return null;
+
+  return {
+    year: Number(match[1]),
+    quarter: "Q" + match[2]
+  };
+}
+
+function buildOfficeMarketRecords(rows, headers, metadata, buildingClass) {
+  const periodHeader = findHeader(headers, ["Period"]);
+  const vacancyHeader = findHeader(headers, [
+    "Vacant Percent % Total",
+    "Vacancy Rate",
+    "Vacancy %",
+    "Vacant % Total"
+  ]);
+  const rentHeader = findHeader(headers, [
+    "Office Gross Rent Overall",
+    "Market Asking Rent/SF",
+    "Asking Rent",
+    "Rent/SF"
+  ]);
+  const totalSfHeader = findHeader(headers, [
+    "Inventory SF",
+    "Total SF",
+    "Total Square Feet",
+    "SF"
+  ]);
+
+  if (!periodHeader || !vacancyHeader || !rentHeader || !totalSfHeader) {
+    throw new Error("Missing required columns in file.");
+  }
+
+  const records = [];
+
+  rows.forEach(row => {
+    const periodInfo = extractYearQuarter(row[periodHeader]);
+    if (!periodInfo) return;
+
+    const vacancyRate = parseNumberValue(row[vacancyHeader]);
+    const rent = parseNumberValue(row[rentHeader]);
+    const totalSf = parseTotalSfValue(row[totalSfHeader]);
+
+    if (vacancyRate === null || rent === null || totalSf === null) return;
+
+    records.push({
+      area_type: metadata.areaType,
+      building_class: buildingClass,
+      report_year: periodInfo.year,
+      report_quarter: periodInfo.quarter,
+      vacancy_rate: vacancyRate,
+      market_asking_rent_sf: rent,
+      total_sf: totalSf,
+      source_file_name: metadata.fileName,
+      uploaded_at: new Date().toISOString()
+    });
+  });
+
+  return records;
+}
+
 
 function numOrZero(v) {
   const n = Number(v);
@@ -225,6 +364,75 @@ async function getObjectIdByQuarterYear(layerUrl, quarter, surveyYear) {
 
   return feat.attributes.OBJECTID;
 }
+
+async function getExistingOfficeMarketObjectIdsByClass(areaType, buildingClass) {
+  const where =
+    `area_type='${areaType}' AND building_class='${buildingClass}'`;
+
+  const data = await postForm(`${OFFICE_MARKET_LAYER_URL}/query`, {
+    f: "json",
+    where,
+    outFields: "OBJECTID",
+    returnGeometry: "false"
+  });
+
+  return (data.features || [])
+    .map(f => f?.attributes?.OBJECTID)
+    .filter(Boolean);
+}
+
+async function deleteOfficeMarketRecords(objectIds) {
+  if (!objectIds.length) return;
+
+  const deletes = objectIds.join(",");
+
+  const data = await postForm(`${OFFICE_MARKET_LAYER_URL}/applyEdits`, {
+    f: "json",
+    deletes
+  });
+
+  if (data?.error) {
+    throw new Error(data.error.message || "Failed deleting existing office market records.");
+  }
+}
+
+
+async function addOfficeMarketRecords(records) {
+  const adds = JSON.stringify(
+    records.map(record => ({ attributes: record }))
+  );
+
+  console.log("Office market records being sent:", records.slice(0, 5));
+  console.log("Total office market records:", records.length);
+
+  const data = await postForm(`${OFFICE_MARKET_LAYER_URL}/applyEdits`, {
+    f: "json",
+    adds
+  });
+
+  console.log("Office market applyEdits response:", data);
+
+  const results = data?.addResults || [];
+
+  if (!results.length) {
+    throw new Error("ArcGIS returned no addResults.");
+  }
+
+  const failed = results.find(r => !r.success);
+
+  if (failed) {
+    const errorMessage =
+      failed?.error?.description ||
+      failed?.error?.message ||
+      JSON.stringify(failed?.error) ||
+      "Unknown ArcGIS add error.";
+
+    throw new Error(`Failed adding office market records. ${errorMessage}`);
+  }
+
+  return results;
+}
+
 
 // 5) RENDER SHEET (shows 0s by default)
 function renderSheet() {
@@ -397,8 +605,599 @@ clearBtn.addEventListener("click", () => {
 
 });
 
+function normalizeHeaderName(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function findHeader(headers, candidates) {
+  const normalizedHeaders = headers.map(h => normalizeHeaderName(h));
+
+  for (const candidate of candidates) {
+    const idx = normalizedHeaders.indexOf(normalizeHeaderName(candidate));
+    if (idx !== -1) return headers[idx];
+  }
+
+  return null;
+}
+
+async function readExcelFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    throw new Error("The Excel file does not contain any worksheets.");
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+
+  const rows = XLSX.utils.sheet_to_json(worksheet, {
+    defval: "",
+    raw: false
+  });
+
+  const headers = rows.length ? Object.keys(rows[0]) : [];
+
+  return {
+    sheetName: firstSheetName,
+    headers,
+    rows
+  };
+}
+
+function parseCsvLine(line) {
+  const result = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+function parseCsvText(csvText) {
+  const lines = csvText
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter(line => line.trim() !== "");
+
+  if (!lines.length) {
+    return { headers: [], rows: [] };
+  }
+
+  const headers = parseCsvLine(lines[0]);
+
+  const rows = lines.slice(1).map(line => {
+    const values = parseCsvLine(line);
+    const row = {};
+
+    headers.forEach((header, index) => {
+      row[header] = values[index] ?? "";
+    });
+
+    return row;
+  });
+
+  return { headers, rows };
+}
+
+async function readCsvFile(file) {
+  const text = await file.text();
+  return parseCsvText(text);
+}
+
+
+function cleanText(value) {
+  return String(value ?? "").trim();
+}
+
+function parseNumberValue(value) {
+  const s = String(value ?? "")
+    .trim()
+    .replace(/,/g, "")
+    .replace(/%/g, "");
+
+  if (s === "") return null;
+
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeZipcode(value) {
+  const raw = cleanText(value);
+  if (!raw) return "";
+
+  const digitsOnly = raw.replace(/\D/g, "");
+  if (!digitsOnly) return raw;
+
+  return digitsOnly.padStart(5, "0").slice(0, 5);
+}
+
+function buildOriginRecords(rows, headers, metadata) {
+  const zipcodeHeader = findHeader(headers, ["Zipcode", "ZIP Code", "Zip Code", "ZIP"]);
+  const cityHeader = findHeader(headers, ["City"]);
+  const stateHeader = findHeader(headers, ["State"]);
+  const latHeader = findHeader(headers, ["lat", "latitude"]);
+  const lngHeader = findHeader(headers, ["lng", "lon", "long", "longitude"]);
+  const employeesHeader = findHeader(headers, ["Employees"]);
+  const pctEmployeesHeader = findHeader(headers, [
+    "% of Employees",
+    "Percent of Employees",
+    "Employees %",
+    "% Employees"
+  ]);
+  const yoyHeader = findHeader(headers, [
+    "YoY Change in Employees",
+    "YoY Change",
+    "YOY Change in Employees",
+    "YOY Change"
+  ]);
+  const notesHeader = findHeader(headers, ["Data Notes", "Notes"]);
+
+  const missingRequired = [];
+  if (!zipcodeHeader) missingRequired.push("Zipcode");
+  if (!employeesHeader) missingRequired.push("Employees");
+  if (!latHeader) missingRequired.push("lat");
+  if (!lngHeader) missingRequired.push("lng");
+
+  if (missingRequired.length) {
+    throw new Error(
+      "Missing required columns: " + missingRequired.join(", ")
+    );
+  }
+
+  const normalizedRecords = [];
+  let skippedRows = 0;
+
+  rows.forEach((row, index) => {
+    const zipcode = normalizeZipcode(row[zipcodeHeader]);
+    const employees = parseNumberValue(row[employeesHeader]);
+    const lat = parseNumberValue(row[latHeader]);
+    const lng = parseNumberValue(row[lngHeader]);
+
+    const isCompletelyEmpty =
+      !zipcode &&
+      employees === null &&
+      lat === null &&
+      lng === null;
+
+    if (isCompletelyEmpty) {
+      skippedRows++;
+      return;
+    }
+
+    if (!zipcode || employees === null || lat === null || lng === null) {
+  console.log("Skipped row:", {
+    reason: {
+      missingZipcode: !zipcode,
+      missingEmployees: employees === null,
+      missingLat: lat === null,
+      missingLng: lng === null
+    },
+    rawRow: row
+  });
+
+  skippedRows++;
+  return;
+}
+
+    normalizedRecords.push({
+      area_type: metadata.areaType,
+      report_year: Number(metadata.reportYear),
+      report_month: metadata.reportMonth,
+      zipcode,
+      city: cityHeader ? cleanText(row[cityHeader]) : "",
+      state: stateHeader ? cleanText(row[stateHeader]) : "",
+      lat,
+      lng,
+      employees,
+      pct_employees: pctEmployeesHeader ? (parseNumberValue(row[pctEmployeesHeader]) ?? 0) : 0,
+      yoy_change_employees: yoyHeader ? (parseNumberValue(row[yoyHeader]) ?? 0) : 0,
+      data_notes: notesHeader ? cleanText(row[notesHeader]) : "",
+      source_file_name: metadata.fileName,
+      source_row_number: index + 2
+    });
+  });
+
+  return {
+    records: normalizedRecords,
+    skippedRows,
+    detectedHeaders: {
+      zipcodeHeader,
+      cityHeader,
+      stateHeader,
+      latHeader,
+      lngHeader,
+      employeesHeader,
+      pctEmployeesHeader,
+      yoyHeader,
+      notesHeader
+    }
+  };
+}
+
+
+function getPeriodLabel(reportMonth, reportYear) {
+  return `${MONTHS[Number(reportMonth)]} ${reportYear}`;
+}
+
+function buildArcGISFeatures(records) {
+  return records.map(r => ({
+   attributes: {
+  area_type: r.area_type,
+  report_year: r.report_year,
+  report_month: r.report_month,
+  zipcode: r.zipcode,
+  city: r.city,
+  state: r.state,
+  lat: r.lat,
+  lng: r.lng,
+  employees: r.employees,
+  pct_employees: r.pct_employees,
+  yoy_change_employees: r.yoy_change_employees,
+  data_notes: r.data_notes,
+  source_file_name: r.source_file_name,
+  source_row_number: r.source_row_number
+},
+    geometry: {
+      x: r.lng,
+      y: r.lat,
+      spatialReference: { wkid: 4326 }
+    }
+  }));
+}
+
+async function deleteExistingOriginRecords(areaType, reportYear, reportMonth) {
+  const where = `
+    area_type = '${areaType}'
+    AND report_year = ${reportYear}
+    AND report_month = ${reportMonth}
+  `;
+
+  const queryUrl = `${ORIGIN_LAYER_URL}/query`;
+  const deleteUrl = `${ORIGIN_LAYER_URL}/deleteFeatures`;
+
+  const queryRes = await fetch(queryUrl, {
+    method: "POST",
+    body: new URLSearchParams({
+      where,
+      returnIdsOnly: "true",
+      f: "json"
+    })
+  }).then(r => r.json());
+
+  const ids = queryRes.objectIds;
+
+  if (!ids || !ids.length) return false;
+
+  await fetch(deleteUrl, {
+    method: "POST",
+    body: new URLSearchParams({
+      objectIds: ids.join(","),
+      f: "json"
+    })
+  });
+
+  return true;
+}
+
+
+async function checkExistingRecords(areaType, reportYear, reportMonth) {
+  const where = `
+    area_type = '${areaType}'
+    AND report_year = ${reportYear}
+    AND report_month = ${reportMonth}
+  `;
+
+  const res = await fetch(`${ORIGIN_LAYER_URL}/query`, {
+    method: "POST",
+    body: new URLSearchParams({
+      where,
+      returnCountOnly: "true",
+      f: "json"
+    })
+  }).then(r => r.json());
+
+  return res.count > 0;
+}
+
+
+async function addOriginFeatures(features) {
+  const url = `${ORIGIN_LAYER_URL}/addFeatures`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      features: JSON.stringify(features),
+      f: "json"
+    })
+  });
+
+  const data = await res.json();
+
+  console.log("addFeatures response:", data);
+
+  if (data.error) {
+    throw new Error(data.error.message || "ArcGIS addFeatures failed.");
+  }
+
+  const addResults = data.addResults || [];
+  const failedAdds = addResults.filter(r => !r.success);
+
+  if (!addResults.length) {
+    throw new Error("ArcGIS returned no addResults.");
+  }
+
+  if (failedAdds.length) {
+    const firstError = failedAdds[0]?.error?.description ||
+      failedAdds[0]?.error?.message ||
+      JSON.stringify(failedAdds[0]?.error) ||
+      "Unknown addFeatures error.";
+
+    throw new Error(`ArcGIS rejected ${failedAdds.length} feature(s). ${firstError}`);
+  }
+
+  return data;
+}
+
+
+originUploadBtn.addEventListener("click", async () => {
+  const areaType = originAreaTypeEl.value;
+  const reportYear = originReportYearEl.value;
+  const reportMonth = Number(originReportMonthEl.value);  
+  const file = originFileEl.files?.[0];
+
+  const periodLabel = getPeriodLabel(reportMonth, reportYear);
+
+  showOriginUploadStatus("", "ok");
+
+  if (!areaType || !reportYear || !reportMonth || !file) {
+    showOriginUploadStatus("Please select area type, year, month and file.", "err");
+    return;
+  }
+
+  const fileName = file.name.toLowerCase();
+
+  originUploadBtn.disabled = true;
+  const originalBtnText = originUploadBtn.textContent;
+  originUploadBtn.textContent = "Reading file…";
+
+  try {
+    let headers = [];
+    let rows = [];
+    let sourceType = "";
+
+    if (fileName.endsWith(".csv")) {
+      const result = await readCsvFile(file);
+      headers = result.headers;
+      rows = result.rows;
+      sourceType = "CSV";
+    } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+      const result = await readExcelFile(file);
+      headers = result.headers;
+      rows = result.rows;
+      sourceType = "Excel";
+    } else {
+      showOriginUploadStatus(
+        "Unsupported file type. Please upload CSV or Excel.",
+        "err"
+      );
+      return;
+    }
+
+    if (!headers.length) {
+      showOriginUploadStatus("File is empty or missing headers.", "err");
+      return;
+    }
+
+    if (!rows.length) {
+      showOriginUploadStatus("File has headers but no data rows.", "err");
+      return;
+    }
+
+    const metadata = {
+      areaType,
+      reportYear,
+      reportMonth,
+      fileName: file.name
+    };
+
+    const { records, skippedRows, detectedHeaders } = buildOriginRecords(rows, headers, metadata);
+    
+    originUploadBtn.textContent = "Uploading…";
+
+if (!records.length) {
+  showOriginUploadStatus(
+    "No valid data rows were found after normalization. Please check the file contents.",
+    "err"
+  );
+  return;
+}
+
+originUploadPreviewRecords = records;
+
+
+
+const hasExisting = await checkExistingRecords(areaType, reportYear, reportMonth);
+
+if (hasExisting) {
+  showOriginUploadStatus(
+    `Existing records for ${areaType} — ${periodLabel} were found and will be replaced.`,
+    "ok"
+  );
+}
+
+// STEP 1: delete old records
+await deleteExistingOriginRecords(areaType, reportYear, reportMonth);
+
+// STEP 2: build features
+const features = buildArcGISFeatures(records);
+
+console.log("Features being sent to ArcGIS (first 3):", features.slice(0, 3));
+console.log("Total features being sent:", features.length);
+
+// STEP 3: upload new records
+const result = await addOriginFeatures(features);
+const successCount = result.addResults.filter(r => r.success).length;
+
+if (!successCount) {
+  throw new Error("ArcGIS did not add any records.");
+}
+
+const totalEmployees = records.reduce((sum, r) => sum + (r.employees || 0), 0);
+const topRecord = [...records].sort((a, b) => b.employees - a.employees)[0];
+
+console.log("Origin upload metadata:", metadata);
+console.log("Detected headers:", detectedHeaders);
+console.log("Normalized records (first 10):", records.slice(0, 10));
+console.log("Total normalized records:", records.length);
+console.log("Skipped rows:", skippedRows);
+
+showOriginUploadStatus(
+  `Upload successful.\n` +
+  `Added records: ${successCount}\n` +
+  `Skipped rows: ${skippedRows}\n` +
+  `Total Employees: ${totalEmployees.toLocaleString()}\n` +
+  `Top ZIP: ${topRecord.zipcode} (${topRecord.employees.toLocaleString()} employees)\n` +
+  `Area: ${areaType}\n` +
+  `Year: ${reportYear}\n` +
+  `Period: ${periodLabel}`,
+  "ok"
+);
+  } catch (err) {
+    console.error(err);
+    showOriginUploadStatus(
+      "Could not process file.\n" + (err?.message || err),
+      "err"
+    );
+  } finally {
+    originUploadBtn.disabled = false;
+    originUploadBtn.textContent = originalBtnText;
+  }
+});
+
 analyticsBtn.addEventListener("click", () => {
   window.open("analytics.html", "_blank");
+});
+
+officeUploadBtn.addEventListener("click", async () => {
+  if (officeUploadBtn.disabled) return;
+
+  const originalText = officeUploadBtn.textContent;
+  officeUploadBtn.disabled = true;
+  officeUploadBtn.textContent = "Processing…";
+
+  try {
+    showOfficeUploadStatus("", "ok");
+
+    const areaType = officeAreaTypeEl.value;
+    const classAFile = officeClassAFileEl.files[0];
+    const classBFile = officeClassBFileEl.files[0];
+
+    if (!areaType) {
+      showOfficeUploadStatus("Please select an area type.", "err");
+      return;
+    }
+
+    if (!classAFile && !classBFile) {
+      showOfficeUploadStatus("Please upload at least one file: Class A or Class B.", "err");
+      return;
+    }
+
+    let totalInserted = 0;
+    const updatedClasses = [];
+
+    if (classAFile) {
+      const data = classAFile.name.toLowerCase().endsWith(".csv")
+        ? await readCsvFile(classAFile)
+        : await readExcelFile(classAFile);
+
+      const records = buildOfficeMarketRecords(
+        data.rows,
+        data.headers,
+        { areaType, fileName: classAFile.name },
+        "A"
+      );
+
+      if (!records.length) {
+        throw new Error(`No valid quarterly records were found in ${classAFile.name}.`);
+      }
+
+      const existingIds = await getExistingOfficeMarketObjectIdsByClass(areaType, "A");
+      if (existingIds.length) {
+        await deleteOfficeMarketRecords(existingIds);
+      }
+
+      await addOfficeMarketRecords(records);
+      totalInserted += records.length;
+      updatedClasses.push("Class A");
+    }
+
+    if (classBFile) {
+      const data = classBFile.name.toLowerCase().endsWith(".csv")
+        ? await readCsvFile(classBFile)
+        : await readExcelFile(classBFile);
+
+      const records = buildOfficeMarketRecords(
+        data.rows,
+        data.headers,
+        { areaType, fileName: classBFile.name },
+        "B"
+      );
+
+      if (!records.length) {
+        throw new Error(`No valid quarterly records were found in ${classBFile.name}.`);
+      }
+
+      const existingIds = await getExistingOfficeMarketObjectIdsByClass(areaType, "B");
+      if (existingIds.length) {
+        await deleteOfficeMarketRecords(existingIds);
+      }
+
+      await addOfficeMarketRecords(records);
+      totalInserted += records.length;
+      updatedClasses.push("Class B");
+    }
+
+    showOfficeUploadStatus(
+      `Upload successful.\nUpdated: ${updatedClasses.join(", ")}\nInserted records: ${totalInserted}`,
+      "ok"
+    );
+
+    officeClassAFileEl.value = "";
+    officeClassBFileEl.value = "";
+  } catch (e) {
+    console.error(e);
+    showOfficeUploadStatus(
+      "Office market upload failed.\n" + (e?.message || e),
+      "err"
+    );
+  } finally {
+    officeUploadBtn.disabled = false;
+    officeUploadBtn.textContent = originalText || "Upload & Process";
+  }
 });
 
 

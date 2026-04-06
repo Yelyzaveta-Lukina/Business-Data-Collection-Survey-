@@ -389,3 +389,29 @@ body{
     grid-template-columns: 1fr;
   }
 }
+
+.uploadCard{
+  margin-top:16px;
+}
+
+.uploadCard__head{
+  margin-bottom:8px;
+}
+
+.uploadCard__title{
+  margin:0 0 6px 0;
+  font-size:20px;
+  font-weight:900;
+}
+
+.uploadActions{
+  margin-top:18px;
+  display:flex;
+  justify-content:flex-end;
+}
+
+.input--file{
+  height:auto;
+  padding:10px 12px;
+  background:#fff;
+}

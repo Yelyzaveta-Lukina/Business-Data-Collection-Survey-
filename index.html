@@ -87,10 +87,113 @@
 
     </section>
 
+    <section class="card uploadCard">
+  <div class="uploadCard__head">
+    <h2 class="uploadCard__title">Employee Origin Upload</h2>
+    <div class="hint">Upload CBD or Citywide employee origin file for later mapping and summary.</div>
+  </div>
+
+  <label class="label fieldSpace" for="originAreaType">Area Type</label>
+  <select id="originAreaType" class="input">
+    <option value="">Select area type</option>
+    <option value="CBD">CBD</option>
+    <option value="Citywide">Citywide</option>
+  </select>
+  <div class="hint">Choose which area this file represents.</div>
+
+  <label class="label fieldSpace" for="originReportYear">Report Year</label>
+  <select id="originReportYear" class="input">
+    <option value="">Select year</option>
+    <option value="2026">2026</option>
+    <option value="2027">2027</option>
+  </select>
+  <div class="hint">Choose the report year for this file.</div>
+
+  <label class="label" for="originReportMonth">Report Month</label>
+<select id="originReportMonth" class="input">
+  <option value="">Select month</option>
+  <option value="1">January</option>
+  <option value="2">February</option>
+  <option value="3">March</option>
+  <option value="4">April</option>
+  <option value="5">May</option>
+  <option value="6">June</option>
+  <option value="7">July</option>
+  <option value="8">August</option>
+  <option value="9">September</option>
+  <option value="10">October</option>
+  <option value="11">November</option>
+  <option value="12">December</option>
+</select>
+<div class="hint">Choose the reporting month.</div>
+
+  <label class="label fieldSpace" for="originFile">Upload File</label>
+  <input
+    id="originFile"
+    type="file"
+    class="input input--file"
+    accept=".csv,.xlsx,.xls"
+  />
+  <div class="hint">Accepted formats: CSV, XLSX, XLS.</div>
+
+  <div class="uploadActions">
+    <button id="originUploadBtn" class="btn btn--primary" type="button">
+      Upload & Process
+    </button>
+  </div>
+
+  <div id="originUploadStatus" class="status" aria-live="polite"></div>
+</section>
+
+
+<section class="card uploadCard">
+  <div class="uploadCard__head">
+    <h2 class="uploadCard__title">Office Market Statistics Upload</h2>
+    <div class="hint">Upload full historical office market files. You can upload Class A, Class B, or both.</div>
+  </div>
+
+  <label class="label fieldSpace" for="officeAreaType">Area Type</label>
+  <select id="officeAreaType" class="input">
+    <option value="">Select area type</option>
+    <option value="CBD">CBD</option>
+    <option value="Citywide">Citywide</option>
+  </select>
+  <div class="hint">Choose which area this report represents.</div>
+
+
+
+  <label class="label fieldSpace" for="officeClassAFile">Class A File</label>
+  <input
+    id="officeClassAFile"
+    type="file"
+    class="input input--file"
+    accept=".csv,.xlsx,.xls"
+  />
+  <div class="hint">Upload the Class A CoStar file.</div>
+
+  <label class="label fieldSpace" for="officeClassBFile">Class B File</label>
+  <input
+    id="officeClassBFile"
+    type="file"
+    class="input input--file"
+    accept=".csv,.xlsx,.xls"
+  />
+  <div class="hint">Upload the Class B CoStar file.</div>
+
+  <div class="uploadActions">
+    <button id="officeUploadBtn" class="btn btn--primary" type="button">
+      Upload & Process
+    </button>
+  </div>
+
+  <div id="officeUploadStatus" class="status" aria-live="polite"></div>
+</section>
+
     <div class="foot">Internal use • Updates are saved to ArcGIS hosted layers</div>
 
   </main>
 
-  <script src="app.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+ <script src="app.js"></script>
 </body>
 </html>
