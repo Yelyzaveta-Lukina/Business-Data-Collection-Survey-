@@ -2,198 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Business & Employees by Industry Survey</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Business Data Collection</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+<body class="landingBody">
+  <main class="landing">
 
-<body>
-  <main class="wrap">
-    <header class="header">
-      <div class="header__top">CITY OF CORAL GABLES</div>
-      <div class="header__title">Business Data Collection Survey</div>
+    <header class="landingHeader">
+      <img
+        src="images/city-logo.png"
+        alt="City of Coral Gables logo"
+        class="landingHeader__logo"
+      />
+
+
+      <h1 class="landingHeader__title">Business Data Collection</h1>
+
+      <p class="landingHeader__text">
+        Welcome to the business and employee industry reporting portal.
+        Choose where you would like to continue.
+      </p>
     </header>
 
-   <section class="card">
+    <section class="landingActions">
+      <a href="survey.html" class="landingCard">
+        <span class="landingCard__eyebrow">Data Entry</span>
+        <h2 class="landingCard__title">Open Survey Page</h2>
+        <p class="landingCard__text">
+          Update business and employees data.
+        </p>
+      </a>
 
-    <label class="label" for="surveyDate">Survey date</label>
-    <input id="surveyDate" type="date" class="input" />
-    <div class="hint">Defaults to today. Change only if needed.</div>
-
-
-    <label class="label fieldSpace" for="yearSelect">Year</label>
-    <select id="yearSelect" class="input">
-      <option value="">Select year</option>
-      <option value="2026">2026</option>
-      <option value="2027">2027</option>
-    </select>
-    <div class="hint">Please select a year.</div>
-
-    <label class="label fieldSpace" for="quarterSelect">Quarter</label>
-    <select id="quarterSelect" class="input">
-      <option value="">Select quarter</option>
-      <option value="Q1">Q1 (Jan–Mar)</option>
-      <option value="Q2">Q2 (Apr–Jun)</option>
-      <option value="Q3">Q3 (Jul–Sep)</option>
-      <option value="Q4">Q4 (Oct–Dec)</option>
-    </select>
-    <div class="hint">Please select a quarter.</div>
-
+      <a href="analytics.html" class="landingCard">
+        <span class="landingCard__eyebrow">Insights</span>
+        <h2 class="landingCard__title">Open Analytics Page</h2>
+        <p class="landingCard__text">
+          Review charts, trends, and quarter comparisons.
+        </p>
+      </a>
     </section>
 
-    <section class="tabs">
-      <button id="btnBusiness" class="tab tab--active" type="button">Businesses by Industry</button>
-      <button id="btnEmployees" class="tab" type="button">Employees by Industry</button>
-    </section>
-
-    <section class="sheet card">
-      <div class="sheet__head">
-        <h2 id="sheetTitle" class="sheet__title">Businesses by Industry</h2>
-      </div>
-
-
-     <div class="gridHead">
-      <div class="gridHead__left">Industry</div>
-
-      <div class="gridHead__right">
-        <span>Value</span>
-
-        <button id="clearSheet" class="btn btn--secondary clearTopBtn" type="button">
-          Clear
-        </button>
-      </div>
-    </div>
-
-      <div id="rows" class="rows"></div>
-
-      <div class="sheet__actions">
-
-        <div class="sheet__buttons">
-
-          <button id="analyticsBtn" class="btn btn--secondary" type="button">
-            Analytics
-          </button>
-
-          <button id="saveSheet" class="btn btn--primary" type="button">
-            Save Changes
-          </button>
-
-
-        </div>
-
-        <div id="sheetStatus" class="status" aria-live="polite"></div>
-
-      </div>
-
-    </section>
-
-    <section class="card uploadCard">
-  <div class="uploadCard__head">
-    <h2 class="uploadCard__title">Employee Origin Upload</h2>
-    <div class="hint">Upload CBD or Citywide employee origin file for later mapping and summary.</div>
-  </div>
-
-  <label class="label fieldSpace" for="originAreaType">Area Type</label>
-  <select id="originAreaType" class="input">
-    <option value="">Select area type</option>
-    <option value="CBD">CBD</option>
-    <option value="Citywide">Citywide</option>
-  </select>
-  <div class="hint">Choose which area this file represents.</div>
-
-  <label class="label fieldSpace" for="originReportYear">Report Year</label>
-  <select id="originReportYear" class="input">
-    <option value="">Select year</option>
-    <option value="2026">2026</option>
-    <option value="2027">2027</option>
-  </select>
-  <div class="hint">Choose the report year for this file.</div>
-
-  <label class="label" for="originReportMonth">Report Month</label>
-<select id="originReportMonth" class="input">
-  <option value="">Select month</option>
-  <option value="1">January</option>
-  <option value="2">February</option>
-  <option value="3">March</option>
-  <option value="4">April</option>
-  <option value="5">May</option>
-  <option value="6">June</option>
-  <option value="7">July</option>
-  <option value="8">August</option>
-  <option value="9">September</option>
-  <option value="10">October</option>
-  <option value="11">November</option>
-  <option value="12">December</option>
-</select>
-<div class="hint">Choose the reporting month.</div>
-
-  <label class="label fieldSpace" for="originFile">Upload File</label>
-  <input
-    id="originFile"
-    type="file"
-    class="input input--file"
-    accept=".csv,.xlsx,.xls"
-  />
-  <div class="hint">Accepted formats: CSV, XLSX, XLS.</div>
-
-  <div class="uploadActions">
-    <button id="originUploadBtn" class="btn btn--primary" type="button">
-      Upload & Process
-    </button>
-  </div>
-
-  <div id="originUploadStatus" class="status" aria-live="polite"></div>
-</section>
-
-
-<section class="card uploadCard">
-  <div class="uploadCard__head">
-    <h2 class="uploadCard__title">Office Market Statistics Upload</h2>
-    <div class="hint">Upload full historical office market files. You can upload Class A, Class B, or both.</div>
-  </div>
-
-  <label class="label fieldSpace" for="officeAreaType">Area Type</label>
-  <select id="officeAreaType" class="input">
-    <option value="">Select area type</option>
-    <option value="CBD">CBD</option>
-    <option value="Citywide">Citywide</option>
-  </select>
-  <div class="hint">Choose which area this report represents.</div>
-
-
-
-  <label class="label fieldSpace" for="officeClassAFile">Class A File</label>
-  <input
-    id="officeClassAFile"
-    type="file"
-    class="input input--file"
-    accept=".csv,.xlsx,.xls"
-  />
-  <div class="hint">Upload the Class A CoStar file.</div>
-
-  <label class="label fieldSpace" for="officeClassBFile">Class B File</label>
-  <input
-    id="officeClassBFile"
-    type="file"
-    class="input input--file"
-    accept=".csv,.xlsx,.xls"
-  />
-  <div class="hint">Upload the Class B CoStar file.</div>
-
-  <div class="uploadActions">
-    <button id="officeUploadBtn" class="btn btn--primary" type="button">
-      Upload & Process
-    </button>
-  </div>
-
-  <div id="officeUploadStatus" class="status" aria-live="polite"></div>
-</section>
-
-    <div class="foot">Internal use • Updates are saved to ArcGIS hosted layers</div>
+    <footer class="landingFooter">
+      Internal use • City of Coral Gables
+    </footer>
 
   </main>
-
- <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
- <script src="app.js"></script>
 </body>
 </html>

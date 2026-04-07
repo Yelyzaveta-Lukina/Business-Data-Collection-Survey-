@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Business & Employees by Industry Survey</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="surveyPageBody">
+  <main class="wrap wrap--survey">
+
+    <header class="surveyHero">
+  <div class="surveyHero__bar">
+    <h1 class="surveyHero__title">Survey</h1>
+
+    <img
+      src="images/city-logo.png"
+      alt="City of Coral Gables logo"
+      class="surveyHero__logo"
+    />
+  </div>
+
+  <div class="surveyHero__content">
+    <p class="surveyHero__text">
+      Welcome to the City of Coral Gables Business Data Collection Survey.
+      This survey is designed to collect information on businesses and employees within the City of Coral Gables.
+      You may complete any of the sections below as applicable. All submitted information will be securely stored
+      and updated for analysis and reporting purposes.
+    </p>
+  </div>
+</header>
+
+
+<section class="accordionCard">
+  <button class="accordionToggle" type="button" aria-expanded="true">
+    <span>Businesses and Employees by Industry</span>
+    <span class="accordionArrow">⌄</span>
+  </button>
+
+  <div class="accordionPanel">
+
+   <section class="card">
+
+    <label class="label" for="surveyDate">Survey date</label>
+    <input id="surveyDate" type="date" class="input" />
+    <div class="hint">Defaults to today. Change only if needed.</div>
+
+
+    <label class="label fieldSpace" for="yearSelect">Year</label>
+    <select id="yearSelect" class="input">
+      <option value="">Select year</option>
+      <option value="2026">2026</option>
+      <option value="2027">2027</option>
+    </select>
+    <div class="hint">Please select a year.</div>
+
+    <label class="label fieldSpace" for="quarterSelect">Quarter</label>
+    <select id="quarterSelect" class="input">
+      <option value="">Select quarter</option>
+      <option value="Q1">Q1 (Jan–Mar)</option>
+      <option value="Q2">Q2 (Apr–Jun)</option>
+      <option value="Q3">Q3 (Jul–Sep)</option>
+      <option value="Q4">Q4 (Oct–Dec)</option>
+    </select>
+    <div class="hint">Please select a quarter.</div>
+
+    </section>
+
+    <section class="tabs">
+      <button id="btnBusiness" class="tab tab--active" type="button">Businesses by Industry</button>
+      <button id="btnEmployees" class="tab" type="button">Employees by Industry</button>
+    </section>
+
+    <section class="sheet card">
+      <div class="sheet__head">
+        <h2 id="sheetTitle" class="sheet__title">Businesses by Industry</h2>
+      </div>
+
+
+     <div class="gridHead">
+      <div class="gridHead__left">Industry</div>
+
+      <div class="gridHead__right">
+        <span>Value</span>
+
+        <button id="clearSheet" class="btn btn--secondary clearTopBtn" type="button">
+          Clear
+        </button>
+      </div>
+    </div>
+
+      <div id="rows" class="rows"></div>
+
+      <div class="sheet__actions">
+
+        <div class="sheet__buttons">
+
+
+  <button id="saveSheet" class="btn btn--primary" type="button">
+    Save Changes
+  </button>
+
+</div>
+
+        <div id="sheetStatus" class="status" aria-live="polite"></div>
+
+      </div>
+
+    </section>
+
+     </div>
+</section>
+
+
+
+<section class="accordionCard">
+  <button class="accordionToggle" type="button" aria-expanded="false">
+    <span>Employees Origin Upload</span>
+    <span class="accordionArrow">⌄</span>
+  </button>
+
+  <div class="accordionPanel">
+    <section class="card uploadCard">
+      <div class="uploadCard__head">
+        <h2 class="uploadCard__title">Employee Origin Upload</h2>
+        <div class="hint">Upload CBD or Citywide employee origin file for later mapping and summary.</div>
+      </div>
+
+      <label class="label fieldSpace" for="originAreaType">Area Type</label>
+      <select id="originAreaType" class="input">
+        <option value="">Select area type</option>
+        <option value="CBD">CBD</option>
+        <option value="Citywide">Citywide</option>
+      </select>
+      <div class="hint">Choose which area this file represents.</div>
+
+      <label class="label fieldSpace" for="originReportYear">Report Year</label>
+      <select id="originReportYear" class="input">
+        <option value="">Select year</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+      </select>
+      <div class="hint">Choose the report year for this file.</div>
+
+      <label class="label" for="originReportMonth">Report Month</label>
+      <select id="originReportMonth" class="input">
+        <option value="">Select month</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+      <div class="hint">Choose the reporting month.</div>
+
+      <label class="label fieldSpace" for="originFile">Upload File</label>
+      <input
+        id="originFile"
+        type="file"
+        class="input input--file"
+        accept=".csv,.xlsx,.xls"
+      />
+      <div class="hint">Accepted formats: CSV, XLSX, XLS.</div>
+
+      <div class="uploadActions">
+        <button id="originUploadBtn" class="btn btn--primary" type="button">
+          Upload & Process
+        </button>
+      </div>
+
+      <div id="originUploadStatus" class="status" aria-live="polite"></div>
+    </section>
+  </div>
+</section>  
+
+
+
+<section class="accordionCard">
+  <button class="accordionToggle" type="button" aria-expanded="false">
+    <span>Office Market Statistics Upload</span>
+    <span class="accordionArrow">⌄</span>
+  </button>
+
+  <div class="accordionPanel">
+    <section class="card uploadCard">
+      <div class="uploadCard__head">
+        <h2 class="uploadCard__title">Office Market Statistics Upload</h2>
+        <div class="hint">Upload full historical office market files. You can upload Class A, Class B, or both.</div>
+      </div>
+
+      <label class="label fieldSpace" for="officeAreaType">Area Type</label>
+      <select id="officeAreaType" class="input">
+        <option value="">Select area type</option>
+        <option value="CBD">CBD</option>
+        <option value="Citywide">Citywide</option>
+      </select>
+      <div class="hint">Choose which area this report represents.</div>
+
+      <label class="label fieldSpace" for="officeClassAFile">Class A File</label>
+      <input
+        id="officeClassAFile"
+        type="file"
+        class="input input--file"
+        accept=".csv,.xlsx,.xls"
+      />
+      <div class="hint">Upload the Class A CoStar file.</div>
+
+      <label class="label fieldSpace" for="officeClassBFile">Class B File</label>
+      <input
+        id="officeClassBFile"
+        type="file"
+        class="input input--file"
+        accept=".csv,.xlsx,.xls"
+      />
+      <div class="hint">Upload the Class B CoStar file.</div>
+
+      <div class="uploadActions">
+        <button id="officeUploadBtn" class="btn btn--primary" type="button">
+          Upload & Process
+        </button>
+      </div>
+
+      <div id="officeUploadStatus" class="status" aria-live="polite"></div>
+    </section>
+  </div>
+</section>
+
+<section class="accordionCard">
+  <button class="accordionToggle" type="button" aria-expanded="false">
+    <span>Residents, Employees, Visitors Statistics Upload</span>
+    <span class="accordionArrow">⌄</span>
+  </button>
+
+  <div class="accordionPanel">
+    <section class="card uploadCard uploadCard--placeholder">
+      <div class="uploadCard__head">
+        <h2 class="uploadCard__title">Residents, Employees, Visitors Statistics Upload</h2>
+        <div class="hint">
+          This section is reserved for the future report upload. Fields and processing will be added once the report format is ready.
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
+
+<section class="surveyBottomNav">
+  <button id="homeBtnBottom" class="btn btn--secondary" type="button">
+    Home
+  </button>
+
+  <button id="analyticsBtnBottom" class="btn btn--primary" type="button">
+    Analytics
+  </button>
+</section>
+
+    <div class="foot">Internal use • Updates are saved to ArcGIS hosted layers</div>
+
+  </main>
+
+ <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+ <script src="app.js"></script>
+</body>
+</html>

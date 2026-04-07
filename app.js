@@ -93,6 +93,19 @@ const officeClassAFileEl = document.getElementById("officeClassAFile");
 const officeClassBFileEl = document.getElementById("officeClassBFile");
 const officeUploadBtn = document.getElementById("officeUploadBtn");
 const officeUploadStatus = document.getElementById("officeUploadStatus");
+const homeBtn = document.getElementById("homeBtn");
+
+if (homeBtn) {
+  homeBtn.addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+}
+
+if (analyticsBtn) {
+  analyticsBtn.addEventListener("click", () => {
+    window.location.href = "analytics.html";
+  });
+}
 
 // 3) STATE
 let active = "business";
@@ -1199,6 +1212,31 @@ officeUploadBtn.addEventListener("click", async () => {
     officeUploadBtn.textContent = originalText || "Upload & Process";
   }
 });
+
+document.querySelectorAll(".accordionToggle").forEach(toggle => {
+  toggle.addEventListener("click", () => {
+    const card = toggle.closest(".accordionCard");
+    const isOpen = card.classList.contains("accordionCard--open");
+
+    card.classList.toggle("accordionCard--open");
+    toggle.setAttribute("aria-expanded", String(!isOpen));
+  });
+});
+
+const homeBtnBottom = document.getElementById("homeBtnBottom");
+const analyticsBtnBottom = document.getElementById("analyticsBtnBottom");
+
+if (homeBtnBottom) {
+  homeBtnBottom.addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+}
+
+if (analyticsBtnBottom) {
+  analyticsBtnBottom.addEventListener("click", () => {
+    window.location.href = "analytics.html";
+  });
+}
 
 
 init();
