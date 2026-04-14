@@ -80,7 +80,6 @@ const saveBtn = document.getElementById("saveSheet");
 const sheetStatus = document.getElementById("sheetStatus");
 const quarterSelect = document.getElementById("quarterSelect");
 const clearBtn = document.getElementById("clearSheet");
-const analyticsBtn = document.getElementById("analyticsBtn");
 const yearSelect = document.getElementById("yearSelect");
 const originAreaTypeEl = document.getElementById("originAreaType");
 const originReportYearEl = document.getElementById("originReportYear");
@@ -93,19 +92,7 @@ const officeClassAFileEl = document.getElementById("officeClassAFile");
 const officeClassBFileEl = document.getElementById("officeClassBFile");
 const officeUploadBtn = document.getElementById("officeUploadBtn");
 const officeUploadStatus = document.getElementById("officeUploadStatus");
-const homeBtn = document.getElementById("homeBtn");
 
-if (homeBtn) {
-  homeBtn.addEventListener("click", () => {
-    window.location.href = "index.html";
-  });
-}
-
-if (analyticsBtn) {
-  analyticsBtn.addEventListener("click", () => {
-    window.location.href = "analytics.html";
-  });
-}
 
 // 3) STATE
 let active = "business";
@@ -1111,9 +1098,6 @@ showOriginUploadStatus(
   }
 });
 
-analyticsBtn.addEventListener("click", () => {
-  window.open("analytics.html", "_blank");
-});
 
 officeUploadBtn.addEventListener("click", async () => {
   if (officeUploadBtn.disabled) return;

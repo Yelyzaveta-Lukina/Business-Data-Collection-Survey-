@@ -99,8 +99,8 @@ body{
 .btn--primary{
   background: var(--teal);
   color:#fff;
-  border-color: var(--teal);
-  min-width: 220px;
+  border:none;
+  box-shadow: 0 10px 25px rgba(0,0,0,.2);
 }
 
 /* Status message (default styling) */
@@ -193,7 +193,7 @@ body{
   display:flex;
   justify-content:flex-end;
   align-items:center;
-}ems:center;
+}ems:center
 
 
 #analyticsBtn{
@@ -571,46 +571,58 @@ body{
 ========================= */
 
 .surveyHero{
-  margin-bottom: 26px;
-  border-radius: 18px;
-  overflow: hidden;
-  background: #e2ccb3;
-  border: 1px solid rgba(0,0,0,.05);
+  margin-bottom: 24px;
+  position: relative;
 }
 
 .surveyHero__bar{
-  background: var(--teal);
-  color: #fff;
-  padding: 20px 26px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  padding: 22px 28px;
+  background: rgba(11, 111, 115, 0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,.18);
 }
 
 .surveyHero__title{
   margin: 0;
-  font-size: 44px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.surveyHero__logo{
-  width: 130px;
-  height: auto;
-  flex-shrink: 0;
+  font-size: 54px;
+  font-weight: 900;
+  color: #ffffff !important;
+  letter-spacing: 0.4px;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.45);
 }
 
 .surveyHero__content{
-  padding: 26px 26px 30px;
+  padding: 0 28px 26px;
+}
+
+.surveyHero__logo{
+  width: 120px;
+  height: auto;
+  opacity: 1;
+  filter: brightness(0) invert(1);
+}
+
+.surveyHero__content{
+  padding: 22px 28px 10px;
 }
 
 .surveyHero__text{
   margin: 0;
-  font-size: 18px;
-  line-height: 1.55;
   max-width: 980px;
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.93);
+  text-shadow: 0 2px 10px rgba(0,0,0,.22);
 }
+
+.surveyHero{
+  position:relative;
+}
+
+
 
 .accordionCard{
   margin-bottom: 18px;
@@ -669,6 +681,12 @@ body{
   margin-bottom: 14px;
 }
 
+.accordionPanel .card{
+  background: rgba(255,255,255,0.95);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.18);
+}
+
 @media (max-width: 768px){
   .surveyHero__bar{
     flex-direction: column;
@@ -688,25 +706,51 @@ body{
   }
 
   .accordionToggle{
-    padding: 20px 22px;
-    font-size: 21px;
-  }
+  width: 100%;
+  border: none;
+  background: rgba(255,255,255,0.92);
+  color: var(--teal);
+  border-radius: 22px;
+  padding: 22px 28px;
+  font-size: 21px;
+  font-weight: 600;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(0,0,0,.25);
+  backdrop-filter: blur(6px);
+}
 
   .accordionArrow{
-    width: 46px;
-    height: 46px;
-    font-size: 28px;
-  }
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  transition: transform .25s ease;
+}
 }
 
 .surveyPageBody{
-  background: #e2ccb3;
+  background:
+    linear-gradient(rgba(8, 41, 44, 0.75), rgba(8, 41, 44, 0.75)),
+    url("images/coral-gables-bg.jpg") center/cover no-repeat;
 }
 
 .wrap--survey{
   max-width: 100%;
   margin: 0;
   padding: 0 0 44px;
+}
+.wrap--survey .accordionCard{
+  margin: 0 28px 24px;
 }
 
 .wrap--survey .surveyHero{
@@ -759,4 +803,316 @@ body{
   font-size:14px;
   line-height:1.6;
   margin-top:8px;
+}
+
+/* =========================
+   Analytics Page Redesign
+========================= */
+
+.analyticsPageBody{
+  margin:0;
+  min-height:100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  background:
+    linear-gradient(rgba(8, 41, 44, 0.75), rgba(8, 41, 44, 0.75)),
+    url("images/coral-gables-bg.jpg") center/cover no-repeat;
+  color:#fff;
+}
+
+.analyticsLayout{
+  min-height:100vh;
+  padding-bottom:32px;
+}
+
+.analyticsHero{
+  margin-bottom:24px;
+}
+
+.analyticsHero__bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:22px 28px;
+  background:rgba(11, 111, 115, 0.94);
+  border-bottom:1px solid rgba(255,255,255,.12);
+  box-shadow:0 8px 20px rgba(0,0,0,.18);
+}
+
+.analyticsHero__title{
+  margin:0;
+  font-size:54px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:.4px;
+  text-shadow:0 4px 12px rgba(0,0,0,.35);
+}
+
+.analyticsHero__logo{
+  width:120px;
+  height:auto;
+  opacity:1;
+  filter:brightness(0) invert(1);
+}
+
+.analyticsHero__content{
+  padding:22px 28px 10px;
+}
+
+.analyticsHero__text{
+  margin:0;
+  max-width:980px;
+  font-size:18px;
+  line-height:1.6;
+  color:rgba(255,255,255,.93);
+  text-shadow:0 2px 10px rgba(0,0,0,.22);
+}
+
+.analyticsShell{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:24px;
+  padding:0 28px 28px;
+  align-items:start;
+}
+
+.analyticsSidebar{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  position:sticky;
+  top:24px;
+  background:rgba(255,255,255,.10);
+  border-radius:24px;
+  padding:18px;
+  backdrop-filter:blur(8px);
+  box-shadow:0 14px 30px rgba(0,0,0,.18);
+}
+
+.analyticsMenuItem{
+  width:100%;
+  border:none;
+  background:transparent;
+  color:#fff;
+  text-align:left;
+  padding:16px 16px;
+  border-radius:16px;
+  font-size:17px;
+  font-weight:700;
+  line-height:1.35;
+  cursor:pointer;
+  transition:transform .18s ease, background .18s ease, color .18s ease;
+}
+
+.analyticsMenuItem:hover{
+  transform:translateX(2px);
+  background:rgba(255,255,255,.12);
+}
+
+.analyticsMenuItem--active{
+  background:rgba(255,255,255,.92);
+  color:var(--teal);
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+}
+
+.analyticsMain{
+  min-height:620px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.analyticsPlaceholderCard{
+  background:rgba(255,255,255,.95);
+  color:#173236;
+  border-radius:28px;
+  padding:34px;
+  box-shadow:0 18px 40px rgba(0,0,0,.22);
+  min-height:220px;
+}
+
+.analyticsPlaceholderCard__title{
+  margin:0 0 12px 0;
+  font-size:34px;
+  font-weight:900;
+  color:var(--teal);
+}
+
+.analyticsPlaceholderCard__text{
+  margin:0;
+  font-size:16px;
+  line-height:1.6;
+  color:#46585c;
+}
+
+@media (max-width: 980px){
+  .analyticsShell{
+    grid-template-columns:1fr;
+  }
+
+  .analyticsSidebar{
+    position:static;
+  }
+}
+
+@media (max-width: 768px){
+  .analyticsHero__bar{
+    padding:20px 20px;
+  }
+
+  .analyticsHero__title{
+    font-size:38px;
+  }
+
+  .analyticsHero__logo{
+    width:92px;
+  }
+
+  .analyticsHero__content{
+    padding:18px 20px 8px;
+  }
+
+  .analyticsHero__text{
+    font-size:16px;
+  }
+
+  .analyticsShell{
+    padding:0 20px;
+    gap:18px;
+  }
+
+  .analyticsMenuItem{
+    font-size:16px;
+    padding:16px;
+  }
+
+  .analyticsPlaceholderCard{
+    padding:22px;
+  }
+}
+
+.analyticsSectionCard{
+  background: rgba(255,255,255,.95);
+  color:#173236;
+  border-radius:28px;
+  padding:30px;
+  box-shadow:0 18px 40px rgba(0,0,0,.22);
+}
+
+.analyticsSectionHead{
+  margin-bottom:20px;
+}
+
+.analyticsSectionTitle{
+  margin:0;
+  font-size:34px;
+  font-weight:900;
+  color:var(--teal);
+}
+
+.analyticsSectionSubtitle{
+  margin:10px 0 0 0;
+  font-size:16px;
+  line-height:1.6;
+  color:#51656a;
+}
+
+.analyticsFiltersRow{
+  display:grid;
+  grid-template-columns: 220px 220px;
+  gap:16px;
+  margin-bottom:22px;
+}
+
+.analyticsFilterCard{
+  background:rgba(11,111,115,.06);
+  border:1px solid rgba(11,111,115,.12);
+  border-radius:18px;
+  padding:16px;
+}
+
+.analyticsKpiGrid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:18px;
+  margin-bottom:22px;
+}
+
+.analyticsKpiCard{
+  background:rgba(11,111,115,.08);
+  border:1px solid rgba(11,111,115,.12);
+  border-radius:20px;
+  padding:20px;
+}
+
+.analyticsKpiCard__label{
+  font-size:15px;
+  font-weight:800;
+  color:#466065;
+  margin-bottom:10px;
+}
+
+.analyticsKpiCard__value{
+  font-size:36px;
+  font-weight:900;
+  color:var(--teal);
+  line-height:1.1;
+}
+
+.analyticsChartsGrid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:20px;
+}
+
+.analyticsChartCardNew{
+  background:#fff;
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 10px 24px rgba(0,0,0,.08);
+  min-height:760px;
+}
+
+.analyticsChartCardNew__title{
+  margin:0 0 14px 0;
+  font-size:22px;
+  font-weight:900;
+  color:var(--teal);
+}
+
+.analyticsChartCanvasWrap{
+  position:relative;
+  min-height:680px;
+}
+
+@media (max-width: 1100px){
+  .analyticsKpiGrid{
+    grid-template-columns:1fr;
+  }
+
+  .analyticsChartsGrid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width: 768px){
+  .analyticsFiltersRow{
+    grid-template-columns:1fr;
+  }
+
+  .analyticsSectionCard{
+    padding:22px;
+  }
+
+  .analyticsSectionTitle{
+    font-size:28px;
+  }
+
+  .analyticsKpiCard__value{
+    font-size:30px;
+  }
+}
+
+.analyticsKpiCard__value--small{
+  font-size:24px;
+  line-height:1.25;
 }

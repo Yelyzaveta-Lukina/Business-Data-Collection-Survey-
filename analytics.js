@@ -13,7 +13,7 @@ const BUSINESS_FIELDS = [
   { name: "real_estate_rental_leasing", label: "Real Estate and Rental and Leasing" },
   { name: "accommodation_food_services", label: "Accommodation and Food Services" },
   { name: "construction", label: "Construction" },
-  { name: "administrative_support_waste", label: "Administrative and Support and Waste Management and Remediation Services" },
+  { name: "administrative_support_waste", label: "Administrative Support and Waste Management and Remediation Services" },
   { name: "arts_entertainment_recreation", label: "Arts, Entertainment, and Recreation" },
   { name: "management_companies", label: "Management of Companies and Enterprises" },
   { name: "information", label: "Information" },
@@ -61,6 +61,7 @@ const businessCanvas = document.getElementById("businessChart");
 const employeesCanvas = document.getElementById("employeesChart");
 const totalBusinessesEl = document.getElementById("totalBusinesses");
 const totalEmployeesEl = document.getElementById("totalEmployees");
+const topIndustryEl = document.getElementById("topIndustry");
 
 const compareQuarterAEl = document.getElementById("compareQuarterA");
 const compareQuarterBEl = document.getElementById("compareQuarterB");
@@ -300,10 +301,14 @@ function createTrendLineChart(canvas, label, labels, values, yAxisLabel) {
           }
         },
         y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: yAxisLabel
+          ticks: {
+            font: {
+              size: 12
+            },
+            crossAlign: "far"
+          },
+          afterFit(scale) {
+            scale.width = 280;
           }
         }
       }
@@ -416,7 +421,6 @@ async function loadTrendAnalytics() {
   );
 }
 
-
 function createHorizontalBarChart(canvas, title, labels, values) {
   const xAxisLabel =
     title.toLowerCase().includes("employee")
@@ -437,6 +441,14 @@ function createHorizontalBarChart(canvas, title, labels, values) {
       responsive: true,
       maintainAspectRatio: false,
       indexAxis: "y",
+      layout: {
+        padding: {
+          left: 10,
+          right: 10,
+          top: 0,
+          bottom: 0
+        }
+      },
       plugins: {
         legend: { display: false },
         title: { display: false }
@@ -447,6 +459,17 @@ function createHorizontalBarChart(canvas, title, labels, values) {
           title: {
             display: true,
             text: xAxisLabel
+          }
+        },
+        y: {
+          ticks: {
+            font: {
+              size: 12
+            },
+            crossAlign: "far"
+          },
+          afterFit(scale) {
+            scale.width = 360;
           }
         }
       }
@@ -502,6 +525,8 @@ async function loadAnalytics() {
   if (!surveyYear || !quarter) {
     totalBusinessesEl.textContent = "--";
     totalEmployeesEl.textContent = "--";
+    if (topIndustryEl) topIndustryEl.textContent = "--";
+
 
     destroyChart(businessChart);
     destroyChart(employeesChart);
@@ -522,8 +547,25 @@ async function loadAnalytics() {
   totalBusinessesEl.textContent = totalBusinesses.toLocaleString();
   totalEmployeesEl.textContent = totalEmployees.toLocaleString();
 
+
   const businessData = buildChartData(businessAttrs, BUSINESS_FIELDS);
   const employeeData = buildChartData(employeeAttrs, EMPLOYEE_FIELDS);
+
+  let topIndustry = "--";
+let topValue = -1;
+
+EMPLOYEE_FIELDS.forEach(field => {
+  const value = Number(employeeAttrs[field.name] ?? 0);
+
+  if (value > topValue) {
+    topValue = value;
+    topIndustry = field.label;
+  }
+});
+
+if (topIndustryEl) {
+  topIndustryEl.textContent = topIndustry;
+}
 
   destroyChart(businessChart);
   destroyChart(employeesChart);
@@ -750,3 +792,11 @@ loadTrendAnalytics().catch(err => {
   console.error(err);
   alert("Could not load trend analytics: " + err.message);
 });
+
+if (analyticsYearEl) {
+  analyticsYearEl.addEventListener("change", loadAnalytics);
+}
+
+if (quarterEl) {
+  quarterEl.addEventListener("change", loadAnalytics);
+}

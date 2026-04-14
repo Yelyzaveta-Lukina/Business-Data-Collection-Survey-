@@ -8,24 +8,70 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
-  <main class="wrap">
+<body class="analyticsPageBody">
+  <main class="analyticsLayout">
 
-    <header class="header">
-      <div class="header__top">CITY OF CORAL GABLES</div>
-      <div class="header__title">Industry Analytics</div>
+    <header class="analyticsHero">
+      <div class="analyticsHero__bar">
+        <h1 class="analyticsHero__title">Analytics</h1>
+
+        <img
+          src="images/city-logo.png"
+          alt="City of Coral Gables logo"
+          class="analyticsHero__logo"
+        />
+      </div>
+
+      <div class="analyticsHero__content">
+        <p class="analyticsHero__text">
+          Review business, employee, and market data through charts, summaries, and trends.
+          Use the sections on the left to navigate across the analytics dashboard.
+        </p>
+      </div>
     </header>
 
-    <section class="card">
+    <section class="analyticsShell">
+      <aside class="analyticsSidebar">
+        <button class="analyticsMenuItem analyticsMenuItem--active" type="button" data-section="industry">
+          Businesses & Employees by Industry
+        </button>
+
+        <button class="analyticsMenuItem" type="button" data-section="origin">
+          Employees Origin
+        </button>
+
+        <button class="analyticsMenuItem" type="button" data-section="office">
+          Office Market Statistics
+        </button>
+
+        <button class="analyticsMenuItem" type="button" data-section="rev">
+          Residents / Employees / Visitors
+        </button>
+      </aside>
+
+      <section class="analyticsMain">
+        <section class="analyticsSectionCard">
+  <div class="analyticsSectionHead">
+    <div>
+      <h2 class="analyticsSectionTitle">Businesses & Employees by Industry</h2>
+      <p class="analyticsSectionSubtitle">
+        View totals and industry breakdowns by year and quarter.
+      </p>
+    </div>
+  </div>
+
+  <section class="analyticsFiltersRow">
+    <div class="analyticsFilterCard">
       <label class="label" for="analyticsYear">Year</label>
       <select id="analyticsYear" class="input">
         <option value="">Select year</option>
         <option value="2026">2026</option>
         <option value="2027">2027</option>
       </select>
-      <div class="hint">Select a year.</div>
+    </div>
 
-      <label class="label fieldSpace" for="analyticsQuarter">Quarter</label>
+    <div class="analyticsFilterCard">
+      <label class="label" for="analyticsQuarter">Quarter</label>
       <select id="analyticsQuarter" class="input">
         <option value="">Select quarter</option>
         <option value="Q1">Q1 (Jan–Mar)</option>
@@ -33,174 +79,45 @@
         <option value="Q3">Q3 (Jul–Sep)</option>
         <option value="Q4">Q4 (Oct–Dec)</option>
       </select>
-      <div class="hint">Select a quarter to view analytics.</div>
-    </section>
+    </div>
+  </section>
 
-    <section class="analyticsTotals">
-        <div class="card analyticsTotalCard">
-            <div class="analyticsTotalCard__label">Total Businesses</div>
-            <div id="totalBusinesses" class="analyticsTotalCard__value">--</div>
-        </div>
+  <section class="analyticsKpiGrid">
+    <div class="analyticsKpiCard">
+      <div class="analyticsKpiCard__label">Total Businesses</div>
+      <div id="totalBusinesses" class="analyticsKpiCard__value">--</div>
+    </div>
 
-        <div class="card analyticsTotalCard">
-            <div class="analyticsTotalCard__label">Total Employees</div>
-            <div id="totalEmployees" class="analyticsTotalCard__value">--</div>
-        </div>
-    </section>
+    <div class="analyticsKpiCard">
+      <div class="analyticsKpiCard__label">Total Employees</div>
+      <div id="totalEmployees" class="analyticsKpiCard__value">--</div>
+    </div>
 
-    <section class="card analyticsChartCard">
-      <h2 class="analyticsPageTitle">Businesses by Industry</h2>
-      <div class="analyticsCanvasWrap">
+    <div class="analyticsKpiCard">
+      <div class="analyticsKpiCard__label">Top Industry (based on employees count)
+      </div>
+      <div id="topIndustry" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+    </div>
+  </section>
+
+  <section class="analyticsChartsGrid">
+    <div class="analyticsChartCardNew">
+      <h3 class="analyticsChartCardNew__title">Businesses by Industry</h3>
+      <div class="analyticsChartCanvasWrap">
         <canvas id="businessChart"></canvas>
       </div>
-    </section>
+    </div>
 
-    <section class="card analyticsChartCard">
-      <h2 class="analyticsPageTitle">Employees by Industry</h2>
-      <div class="analyticsCanvasWrap">
+    <div class="analyticsChartCardNew">
+      <h3 class="analyticsChartCardNew__title">Employees by Industry</h3>
+      <div class="analyticsChartCanvasWrap">
         <canvas id="employeesChart"></canvas>
       </div>
-    </section>
-
-
-    <section class="card analyticsChartCard">
-      <h2 class="analyticsPageTitle">Quarter Comparison</h2>
-
-      <div class="comparisonSelectors">
-  <div>
-    <label class="label" for="compareYearA">Year A</label>
-    <select id="compareYearA" class="input">
-      <option value="">Select year</option>
-      <option value="2026">2026</option>
-      <option value="2027">2027</option>
-    </select>
-
-    <label class="label fieldSpace" for="compareQuarterA">Quarter A</label>
-    <select id="compareQuarterA" class="input">
-      <option value="">Select quarter</option>
-      <option value="Q1">Q1 (Jan–Mar)</option>
-      <option value="Q2">Q2 (Apr–Jun)</option>
-      <option value="Q3">Q3 (Jul–Sep)</option>
-      <option value="Q4">Q4 (Oct–Dec)</option>
-    </select>
-  </div>
-
-  <div>
-    <label class="label" for="compareYearB">Year B</label>
-    <select id="compareYearB" class="input">
-      <option value="">Select year</option>
-      <option value="2026">2026</option>
-      <option value="2027">2027</option>
-    </select>
-
-    <label class="label fieldSpace" for="compareQuarterB">Quarter B</label>
-    <select id="compareQuarterB" class="input">
-      <option value="">Select quarter</option>
-      <option value="Q1">Q1 (Jan–Mar)</option>
-      <option value="Q2">Q2 (Apr–Jun)</option>
-      <option value="Q3">Q3 (Jul–Sep)</option>
-      <option value="Q4">Q4 (Oct–Dec)</option>
-    </select>
-  </div>
-</div>
-
-   <section class="analyticsTotals comparisonTotals comparisonTotals--four">
-      <div class="card analyticsTotalCard">
-        <div class="analyticsTotalCard__label">Business Change</div>
-        <div id="businessChange" class="analyticsTotalCard__value">--</div>
-      </div>
-
-      <div class="card analyticsTotalCard">
-        <div class="analyticsTotalCard__label">Employee Change</div>
-        <div id="employeeChange" class="analyticsTotalCard__value">--</div>
-      </div>
-
-      <div class="card analyticsTotalCard">
-        <div class="analyticsTotalCard__label">Top Growth Industry</div>
-        <div id="topGrowthIndustry" class="analyticsTotalCard__value analyticsTotalCard__value--small">--</div>
-        <div id="topGrowthDetail" class="analyticsTotalCard__detail">--</div>
-      </div>
-
-      <div class="card analyticsTotalCard">
-        <div class="analyticsTotalCard__label">Top Decline Industry</div>
-        <div id="topDeclineIndustry" class="analyticsTotalCard__value analyticsTotalCard__value--small">--</div>
-        <div id="topDeclineDetail" class="analyticsTotalCard__detail">--</div>
-      </div>
-    </section>
-
-    <div id="comparisonSummary" class="comparisonSummary">
-      Select two quarters to compare business and employee changes.
-    </div>
-
-    <section class="card analyticsChartInner">
-      <h3 class="analyticsCardTitle">Businesses Comparison by Industry</h3>
-      <div class="analyticsCanvasWrap">
-        <canvas id="businessCompareChart"></canvas>
-      </div>
-    </section>
-
-    <section class="card analyticsChartInner">
-      <h3 class="analyticsCardTitle">Employees Comparison by Industry</h3>
-      <div class="analyticsCanvasWrap">
-        <canvas id="employeesCompareChart"></canvas>
-      </div>
-    </section>
-  </section>
-
-  <section class="card analyticsChartCard">
-  <h2 class="analyticsPageTitle">Quarterly Trend by Industry</h2>
-  <div class="hint">Select a data type and industry to view the trend across Q1–Q4.</div>
-
-  <div class="trendSelectors">
-  <div>
-    <label class="label" for="trendYear">Year</label>
-    <select id="trendYear" class="input">
-      <option value="">Select year</option>
-      <option value="2026">2026</option>
-      <option value="2027">2027</option>
-    </select>
-  </div>
-
-  <div>
-    <label class="label" for="trendType">Data Type</label>
-    <select id="trendType" class="input">
-      <option value="business">Businesses</option>
-      <option value="employees">Employees</option>
-    </select>
-  </div>
-
-  <div>
-    <label class="label" for="trendIndustry">Industry</label>
-    <select id="trendIndustry" class="input"></select>
-  </div>
-</div>
-
-    <section class="analyticsTotals trendMiniCards">
-    <div class="card analyticsTotalCard">
-      <div class="analyticsTotalCard__label">Highest Quarter</div>
-      <div id="trendHighestQuarter" class="analyticsTotalCard__value analyticsTotalCard__value--small">--</div>
-      <div id="trendHighestValue" class="analyticsTotalCard__detail">--</div>
-    </div>
-
-    <div class="card analyticsTotalCard">
-      <div class="analyticsTotalCard__label">Lowest Quarter</div>
-      <div id="trendLowestQuarter" class="analyticsTotalCard__value analyticsTotalCard__value--small">--</div>
-      <div id="trendLowestValue" class="analyticsTotalCard__detail">--</div>
     </div>
   </section>
-
-  <div class="card analyticsChartInner trendChartSection">
-    <h3 class="analyticsCardTitle">Trend Across Quarters</h3>
-    <div class="analyticsCanvasWrap analyticsCanvasWrap--medium">
-      <canvas id="trendLineChart"></canvas>
-    </div>
-  </div>
-
-  <div id="trendSummary" class="comparisonSummary trendSummaryBox">
-    Select a data type and industry to view quarterly trend details.
-  </div>
-
 </section>
+      </section>
+    </section>
 
   </main>
 
