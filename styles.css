@@ -1031,6 +1031,13 @@ body{
   transition: transform .18s ease, background .18s ease, color .18s ease;
 }
 
+/* Make <a> behave EXACTLY like menu buttons */
+.analyticsMenuItem{
+  display: block;
+  text-decoration: none;   /* remove underline */
+  color: #3a3f42;          /* force same color */
+}
+
 .analyticsMenuItem:hover{
   transform: translateX(2px);
   background: rgba(255,255,255,.58);
@@ -1883,4 +1890,53 @@ section[data-section="office"] .officeHeroCard__value{
 
 section[data-section="office"] .officeCardTitle{
   color: #2f3437 !important;
+}
+
+/* =========================
+   Analytics Sidebar Nav Links
+========================= */
+
+.analyticsSidebarNav{
+  margin-top: 18px;
+  display: flex;
+  gap: 12px; /* 👈 spacing between buttons */
+}
+
+.analyticsSidebarLink,
+.analyticsSidebarLink:link,
+.analyticsSidebarLink:visited{
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px 16px;
+  border-radius: 18px;
+
+  /* 👇 THIS CREATES INDIVIDUAL BUTTON LOOK */
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.9);
+
+  color: #3a3f42;
+  text-decoration: none;
+
+  font-size: 17px;
+  font-weight: 700;
+
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+
+  transition: all .18s ease;
+}
+
+.analyticsSidebarLink:hover{
+  transform: translateX(2px);
+  background: rgba(255,255,255,0.85);
+  color: var(--orange);
+}
+.analyticsSidebarLink:focus-visible{
+  transform: translateX(2px);
+  background: rgba(255,255,255,.58);
+  color: var(--orange);
+  outline: none;
 }
