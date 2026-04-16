@@ -4,8 +4,21 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Industry Analytics</title>
+
   <link rel="stylesheet" href="styles.css"/>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 </head>
 
 <body class="analyticsPageBody">
@@ -16,7 +29,7 @@
         <h1 class="analyticsHero__title">Analytics</h1>
 
         <img
-          src="images/city-logo.png"
+          src="images/orange_logo.png"
           alt="City of Coral Gables logo"
           class="analyticsHero__logo"
         />
@@ -50,72 +63,336 @@
       </aside>
 
       <section class="analyticsMain">
-        <section class="analyticsSectionCard">
+
+        <!-- SECTION 1: INDUSTRY -->
+        <section class="analyticsSectionCard analyticsContentSection analyticsContentSection--active" data-section="industry">
+          <div class="analyticsSectionHead">
+            <div>
+              <h2 class="analyticsSectionTitle">Businesses & Employees by Industry</h2>
+              <p class="analyticsSectionSubtitle">
+                View totals and industry breakdowns by year and quarter.
+              </p>
+            </div>
+          </div>
+
+          <section class="analyticsFiltersRow">
+            <div class="analyticsFilterCard">
+              <label class="label" for="analyticsYear">Year</label>
+              <select id="analyticsYear" class="input">
+                <option value="">Select year</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+            <div class="analyticsFilterCard">
+              <label class="label" for="analyticsQuarter">Quarter</label>
+              <select id="analyticsQuarter" class="input">
+                <option value="">Select quarter</option>
+                <option value="Q1">Q1 (Jan–Mar)</option>
+                <option value="Q2">Q2 (Apr–Jun)</option>
+                <option value="Q3">Q3 (Jul–Sep)</option>
+                <option value="Q4">Q4 (Oct–Dec)</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="analyticsKpiGrid">
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Total Businesses</div>
+              <div id="totalBusinesses" class="analyticsKpiCard__value">--</div>
+            </div>
+
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Total Employees</div>
+              <div id="totalEmployees" class="analyticsKpiCard__value">--</div>
+            </div>
+
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Top Industry (based on employees count)</div>
+              <div id="topIndustry" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+            </div>
+          </section>
+
+          <section class="analyticsChartsGrid">
+            <div class="analyticsChartCardNew">
+              <h3 class="analyticsChartCardNew__title">Businesses by Industry</h3>
+              <div class="analyticsChartCanvasWrap">
+                <canvas id="businessChart"></canvas>
+              </div>
+            </div>
+
+            <div class="analyticsChartCardNew">
+              <h3 class="analyticsChartCardNew__title">Employees by Industry</h3>
+              <div class="analyticsChartCanvasWrap">
+                <canvas id="employeesChart"></canvas>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- SECTION 2: EMPLOYEES ORIGIN -->
+        <section class="analyticsSectionCard analyticsContentSection" data-section="origin">
+          <div class="analyticsSectionHead">
+            <div>
+              <h2 class="analyticsSectionTitle">Employees Origin</h2>
+              <p class="analyticsSectionSubtitle">
+                Explore employee origin patterns by report year, month, and area type.
+              </p>
+            </div>
+          </div>
+
+          <section class="analyticsOriginFiltersRow">
+            <div class="analyticsFilterCard">
+              <label class="label" for="originAnalyticsYear">Report Year</label>
+              <select id="originAnalyticsYear" class="input">
+                <option value="">Select year</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+            <div class="analyticsFilterCard">
+              <label class="label" for="originAnalyticsMonth">Report Month</label>
+              <select id="originAnalyticsMonth" class="input">
+                <option value="">Select month</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+
+            <div class="analyticsFilterCard">
+              <label class="label" for="originAnalyticsAreaType">Area Type</label>
+              <select id="originAnalyticsAreaType" class="input">
+                <option value="">Select area type</option>
+                <option value="CBD">CBD</option>
+                <option value="Citywide">Citywide</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="analyticsOriginMapCard">
+            <div class="analyticsOriginMapHead">
+              <h3 class="analyticsChartCardNew__title">Employees Origin Map</h3>
+              <p id="originMapMessage" class="analyticsOriginMessage">
+                Select report year, month, and area type to load the map.
+              </p>
+            </div>
+
+            <div id="originMap" class="analyticsOriginMap"></div>
+          </section>
+
+          <section class="analyticsOriginKpiGrid">
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Total Employees Represented</div>
+              <div id="originTotalEmployees" class="analyticsKpiCard__value">--</div>
+            </div>
+
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Number of Origin Areas</div>
+              <div id="originTotalAreas" class="analyticsKpiCard__value">--</div>
+            </div>
+
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Top Origin ZIP</div>
+              <div id="originTopZip" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+            </div>
+
+            <div class="analyticsKpiCard">
+              <div class="analyticsKpiCard__label">Top Origin City</div>
+              <div id="originTopCity" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+            </div>
+          </section>
+
+          <section class="analyticsOriginTableCard">
+            <div class="analyticsSectionHead analyticsSectionHead--compact">
+              <div>
+                <h3 class="analyticsChartCardNew__title">Top 10 Origins</h3>
+              </div>
+            </div>
+
+            <div class="analyticsTableWrap">
+              <table class="analyticsTable">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>ZIP</th>
+                    <th>City</th>
+                    <th>Employees</th>
+                  </tr>
+                </thead>
+                <tbody id="originTopTableBody">
+                  <tr>
+                    <td colspan="4" class="analyticsTable__empty">
+                      No data loaded yet.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="analyticsSectionCard analyticsContentSection" data-section="office">
   <div class="analyticsSectionHead">
     <div>
-      <h2 class="analyticsSectionTitle">Businesses & Employees by Industry</h2>
+      <h2 class="analyticsSectionTitle">Office Market Statistics</h2>
       <p class="analyticsSectionSubtitle">
-        View totals and industry breakdowns by year and quarter.
+        Explore office market performance by building class and area.
       </p>
     </div>
   </div>
 
-  <section class="analyticsFiltersRow">
-    <div class="analyticsFilterCard">
-      <label class="label" for="analyticsYear">Year</label>
-      <select id="analyticsYear" class="input">
-        <option value="">Select year</option>
+  <section class="officeFiltersRow">
+    <div class="officeFilterCard">
+      <label class="label" for="officeYear">Year</label>
+      <select id="officeYear" class="input">
         <option value="2026">2026</option>
         <option value="2027">2027</option>
       </select>
     </div>
 
-    <div class="analyticsFilterCard">
-      <label class="label" for="analyticsQuarter">Quarter</label>
-      <select id="analyticsQuarter" class="input">
-        <option value="">Select quarter</option>
-        <option value="Q1">Q1 (Jan–Mar)</option>
-        <option value="Q2">Q2 (Apr–Jun)</option>
-        <option value="Q3">Q3 (Jul–Sep)</option>
-        <option value="Q4">Q4 (Oct–Dec)</option>
+    <div class="officeFilterCard">
+      <label class="label" for="officeQuarter">Quarter</label>
+      <select id="officeQuarter" class="input">
+        <option value="Q1">Q1</option>
+        <option value="Q2">Q2</option>
+        <option value="Q3">Q3</option>
+        <option value="Q4">Q4</option>
+      </select>
+    </div>
+
+    <div class="officeFilterCard">
+      <label class="label" for="officeArea">Area Type</label>
+      <select id="officeArea" class="input">
+        <option value="Citywide">Citywide</option>
+        <option value="CBD">CBD</option>
       </select>
     </div>
   </section>
 
-  <section class="analyticsKpiGrid">
-    <div class="analyticsKpiCard">
-      <div class="analyticsKpiCard__label">Total Businesses</div>
-      <div id="totalBusinesses" class="analyticsKpiCard__value">--</div>
+  <section class="officeDashboardTop">
+    <div class="officeHeroCard">
+      <div class="officeHeroCard__label">Total Office Inventory</div>
+      <div id="officeTotalSF" class="officeHeroCard__value">--</div>
+      <div class="officeHeroCard__subtext">Class A + Class B combined</div>
     </div>
 
-    <div class="analyticsKpiCard">
-      <div class="analyticsKpiCard__label">Total Employees</div>
-      <div id="totalEmployees" class="analyticsKpiCard__value">--</div>
-    </div>
-
-    <div class="analyticsKpiCard">
-      <div class="analyticsKpiCard__label">Top Industry (based on employees count)
-      </div>
-      <div id="topIndustry" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
-    </div>
-  </section>
-
-  <section class="analyticsChartsGrid">
-    <div class="analyticsChartCardNew">
-      <h3 class="analyticsChartCardNew__title">Businesses by Industry</h3>
-      <div class="analyticsChartCanvasWrap">
-        <canvas id="businessChart"></canvas>
-      </div>
-    </div>
-
-    <div class="analyticsChartCardNew">
-      <h3 class="analyticsChartCardNew__title">Employees by Industry</h3>
-      <div class="analyticsChartCanvasWrap">
-        <canvas id="employeesChart"></canvas>
+    <div class="officeDonutCard">
+      <h3 class="officeCardTitle">Inventory by Class</h3>
+      <div class="officeDonutWrap">
+        <canvas id="officeDonut"></canvas>
       </div>
     </div>
   </section>
+
+  <section class="officeStatsCards">
+    <article class="officeStatCard officeStatCard--a">
+      <div class="officeStatCard__top">
+        <div>
+          <h3 class="officeStatCard__title">Class A</h3>
+          <p class="officeStatCard__tag">Premium</p>
+        </div>
+      </div>
+
+      <div class="officeStatRows">
+        <div class="officeStatRow">
+          <span class="officeStatRow__label">Vacancy</span>
+          <span id="officeA_vacancy" class="officeStatRow__value">--</span>
+        </div>
+
+        <div class="officeStatRow">
+          <span class="officeStatRow__label">Rent</span>
+          <span id="officeA_rent" class="officeStatRow__value">--</span>
+        </div>
+
+        <div class="officeStatRow">
+          <span class="officeStatRow__label">Inventory SF</span>
+          <span id="officeA_sf" class="officeStatRow__value">--</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="officeStatCard officeStatCard--b">
+      <div class="officeStatCard__top">
+        <div>
+          <h3 class="officeStatCard__title">Class B</h3>
+          <p class="officeStatCard__tag">Market</p>
+        </div>
+      </div>
+
+      <div class="officeStatRows">
+        <div class="officeStatRow">
+          <span class="officeStatRow__label">Vacancy</span>
+          <span id="officeB_vacancy" class="officeStatRow__value">--</span>
+        </div>
+
+        <div class="officeStatRow">
+          <span class="officeStatRow__label">Rent</span>
+          <span id="officeB_rent" class="officeStatRow__value">--</span>
+        </div>
+
+        <div class="officeStatRow">
+          <span class="officeStatRow__label">Inventory SF</span>
+          <span id="officeB_sf" class="officeStatRow__value">--</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="officeHighlightsRow">
+  <article class="officeHighlightCard">
+    <div class="officeHighlightCard__label">Weighted Vacancy</div>
+    <div id="officeWeightedVacancy" class="officeHighlightCard__value">--</div>
+    <div class="officeHighlightCard__meta">Based on Class A + B inventory</div>
+  </article>
+
+  <article class="officeHighlightCard">
+    <div class="officeHighlightCard__label">Weighted Avg Rent</div>
+    <div id="officeWeightedRent" class="officeHighlightCard__value">--</div>
+    <div class="officeHighlightCard__meta">Inventory-weighted asking rent</div>
+  </article>
+
+  <article class="officeHighlightCard">
+    <div class="officeHighlightCard__label">Rent Spread</div>
+    <div id="officeRentSpread" class="officeHighlightCard__value">--</div>
+    <div class="officeHighlightCard__meta">Class A rent minus Class B rent</div>
+  </article>
 </section>
+
+<section class="officeTrendsGrid">
+  <article class="officeTrendCard">
+    <div class="officeTrendCard__head">
+      <h3 class="officeCardTitle">Rent Trend by Quarter</h3>
+      <p class="officeTrendCard__subtext">Class A vs Class B</p>
+    </div>
+    <div class="officeTrendCanvasWrap">
+      <canvas id="officeRentTrend"></canvas>
+    </div>
+  </article>
+
+  <article class="officeTrendCard">
+    <div class="officeTrendCard__head">
+      <h3 class="officeCardTitle">Vacancy Trend by Quarter</h3>
+      <p class="officeTrendCard__subtext">Class A vs Class B</p>
+    </div>
+    <div class="officeTrendCanvasWrap">
+      <canvas id="officeVacancyTrend"></canvas>
+    </div>
+  </article>
+</section>
+</section>
+
       </section>
     </section>
 
