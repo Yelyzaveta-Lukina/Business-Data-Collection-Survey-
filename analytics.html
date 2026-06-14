@@ -286,11 +286,15 @@
     </div>
   </section>
 
+  <p class="analyticsSectionSubtitle">
+  Data Source: CoStar Office Market Reports.
+  </p>
+
   <section class="officeDashboardTop">
     <div class="officeHeroCard">
-      <div class="officeHeroCard__label">Total Office Inventory</div>
+      <h3 class="officeCardTitle">Total Office Inventory</h3>
       <div id="officeTotalSF" class="officeHeroCard__value">--</div>
-      <div class="officeHeroCard__subtext">Class A + Class B combined</div>
+      <div class="officeHeroCard__subtext">Class A + Class B + Class C+ combined</div>
     </div>
 
     <div class="officeDonutCard">
@@ -352,16 +356,38 @@
           <span id="officeB_sf" class="officeStatRow__value">--</span>
         </div>
       </div>
+      </article>
+
+      <article class="officeStatCard officeStatCard--cplus">
+  <div class="officeStatCard__top">
+    <div>
+      <h3 class="officeStatCard__title">Class C+</h3>
+      <p class="officeStatCard__tag">Lower-cost / transitional</p>
+    </div>
+  </div>
+
+  <div class="officeStatRows">
+    <div class="officeStatRow">
+      <span class="officeStatRow__label">Vacancy</span>
+      <span id="officeCPlus_vacancy" class="officeStatRow__value">--</span>
+    </div>
+
+    <div class="officeStatRow">
+      <span class="officeStatRow__label">Rent</span>
+      <span id="officeCPlus_rent" class="officeStatRow__value">--</span>
+    </div>
+
+    <div class="officeStatRow">
+      <span class="officeStatRow__label">Inventory SF</span>
+      <span id="officeCPlus_sf" class="officeStatRow__value">--</span>
+    </div>
+  </div>
+
     </article>
   </section>
 
   <section class="officeHighlightsRow">
-  <article class="officeHighlightCard">
-    <div class="officeHighlightCard__label">Weighted Vacancy</div>
-    <div id="officeWeightedVacancy" class="officeHighlightCard__value">--</div>
-    <div class="officeHighlightCard__meta">Based on Class A + B inventory</div>
-  </article>
-
+  
   <article class="officeHighlightCard">
     <div class="officeHighlightCard__label">Weighted Avg Rent</div>
     <div id="officeWeightedRent" class="officeHighlightCard__value">--</div>
@@ -379,7 +405,7 @@
   <article class="officeTrendCard">
     <div class="officeTrendCard__head">
       <h3 class="officeCardTitle">Rent Trend by Quarter</h3>
-      <p class="officeTrendCard__subtext">Class A vs Class B</p>
+      <p class="officeTrendCard__subtext">Class A vs Class B vs Class C+</p>
     </div>
     <div class="officeTrendCanvasWrap">
       <canvas id="officeRentTrend"></canvas>
@@ -389,7 +415,7 @@
   <article class="officeTrendCard">
     <div class="officeTrendCard__head">
       <h3 class="officeCardTitle">Vacancy Trend by Quarter</h3>
-      <p class="officeTrendCard__subtext">Class A vs Class B</p>
+      <p class="officeTrendCard__subtext">Class A vs Class B vs Class C+</p>
     </div>
     <div class="officeTrendCanvasWrap">
       <canvas id="officeVacancyTrend"></canvas>

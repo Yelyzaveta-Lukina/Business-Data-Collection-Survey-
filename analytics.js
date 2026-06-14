@@ -607,11 +607,13 @@ function resetOfficeUI(message = "--") {
   document.getElementById("officeB_rent").textContent = "--";
   document.getElementById("officeB_sf").textContent = "--";
 
-  const weightedVacancyEl = document.getElementById("officeWeightedVacancy");
+  document.getElementById("officeCPlus_vacancy").textContent = "--";
+  document.getElementById("officeCPlus_rent").textContent = "--";
+  document.getElementById("officeCPlus_sf").textContent = "--";
+
   const weightedRentEl = document.getElementById("officeWeightedRent");
   const rentSpreadEl = document.getElementById("officeRentSpread");
 
-  if (weightedVacancyEl) weightedVacancyEl.textContent = "--";
   if (weightedRentEl) weightedRentEl.textContent = "--";
   if (rentSpreadEl) rentSpreadEl.textContent = "--";
 
@@ -640,8 +642,11 @@ function findOfficeClassRecord(features, buildingClass) {
   )?.attributes || null;
 }
 
-function updateOfficeCards(classA, classB) {
-  const totalSF = Number(classA?.total_sf || 0) + Number(classB?.total_sf || 0);
+function updateOfficeCards(classA, classB, classCPlus) {
+  const totalSF =
+    Number(classA?.total_sf || 0) +
+    Number(classB?.total_sf || 0) +
+    Number(classCPlus?.total_sf || 0);
 
   document.getElementById("officeTotalSF").textContent =
     formatOfficeMillionsWithSuffix(totalSF);
@@ -663,38 +668,49 @@ function updateOfficeCards(classA, classB) {
 
   document.getElementById("officeB_sf").textContent =
     formatOfficeMillions(classB?.total_sf);
+
+  document.getElementById("officeCPlus_vacancy").textContent =
+    formatOfficePercent(classCPlus?.vacancy_rate);
+
+  document.getElementById("officeCPlus_rent").textContent =
+    formatOfficeCurrency(classCPlus?.market_asking_rent_sf);
+
+  document.getElementById("officeCPlus_sf").textContent =
+    formatOfficeMillions(classCPlus?.total_sf);
 }
 
-function updateOfficeHighlights(classA, classB) {
+function updateOfficeHighlights(classA, classB, classCPlus) {
   const aSF = Number(classA?.total_sf || 0);
   const bSF = Number(classB?.total_sf || 0);
-  const totalSF = aSF + bSF;
-
-  const weightedVacancy =
-    totalSF > 0
-      ? ((aSF * Number(classA?.vacancy_rate || 0)) + (bSF * Number(classB?.vacancy_rate || 0))) / totalSF
-      : 0;
+  const cPlusSF = Number(classCPlus?.total_sf || 0);
+  const totalSF = aSF + bSF + cPlusSF;
 
   const weightedRent =
     totalSF > 0
-      ? ((aSF * Number(classA?.market_asking_rent_sf || 0)) + (bSF * Number(classB?.market_asking_rent_sf || 0))) / totalSF
+      ? (
+          (aSF * Number(classA?.market_asking_rent_sf || 0)) +
+          (bSF * Number(classB?.market_asking_rent_sf || 0)) +
+          (cPlusSF * Number(classCPlus?.market_asking_rent_sf || 0))
+        ) / totalSF
       : 0;
 
   const rentSpread =
-    Number(classA?.market_asking_rent_sf || 0) - Number(classB?.market_asking_rent_sf || 0);
+    Number(classA?.market_asking_rent_sf || 0) -
+    Number(classB?.market_asking_rent_sf || 0);
 
-  const weightedVacancyEl = document.getElementById("officeWeightedVacancy");
   const weightedRentEl = document.getElementById("officeWeightedRent");
   const rentSpreadEl = document.getElementById("officeRentSpread");
 
-  if (weightedVacancyEl) weightedVacancyEl.textContent = formatOfficePercent(weightedVacancy);
-  if (weightedRentEl) weightedRentEl.textContent = formatOfficeCurrency(weightedRent);
+  if (weightedRentEl) {
+    weightedRentEl.textContent = formatOfficeCurrency(weightedRent);
+  }
+
   if (rentSpreadEl) {
     rentSpreadEl.textContent = `${rentSpread >= 0 ? "+" : "-"}$${Math.abs(rentSpread).toFixed(2)}`;
   }
 }
 
-function renderOfficeDonut(classA, classB) {
+function renderOfficeDonut(classA, classB, classCPlus) {
   const ctx = document.getElementById("officeDonut");
   if (!ctx) return;
 
@@ -703,14 +719,15 @@ function renderOfficeDonut(classA, classB) {
   officeChart = new Chart(ctx, {
     type: "doughnut",
     data: {
-      labels: ["Class A", "Class B"],
+      labels: ["Class A", "Class B", "Class C+"],
       datasets: [{
         data: [
           Number(classA?.total_sf || 0),
-          Number(classB?.total_sf || 0)
+          Number(classB?.total_sf || 0),
+          Number(classCPlus?.total_sf || 0)
         ],
-        backgroundColor: ["#0b6f73", "#d46b08"],
-        borderColor: ["#ffffff", "#ffffff"],
+        backgroundColor: ["#0b6f73", "#d46b08", "#6b7280"],
+        borderColor: ["#ffffff", "#ffffff", "#ffffff"],
         borderWidth: 2,
         hoverOffset: 4
       }]
@@ -740,6 +757,7 @@ function renderOfficeDonut(classA, classB) {
 function buildQuarterSeries(historyFeatures, valueField) {
   const classAMap = new Map();
   const classBMap = new Map();
+  const classCPlusMap = new Map();
 
   historyFeatures.forEach(feature => {
     const attrs = feature.attributes || {};
@@ -751,16 +769,18 @@ function buildQuarterSeries(historyFeatures, valueField) {
 
     if (buildingClass === "A") classAMap.set(quarter, value);
     if (buildingClass === "B") classBMap.set(quarter, value);
+    if (buildingClass === "C+") classCPlusMap.set(quarter, value);
   });
 
   return {
     labels: OFFICE_QUARTERS,
     classAValues: OFFICE_QUARTERS.map(q => classAMap.get(q) ?? null),
-    classBValues: OFFICE_QUARTERS.map(q => classBMap.get(q) ?? null)
+    classBValues: OFFICE_QUARTERS.map(q => classBMap.get(q) ?? null),
+    classCPlusValues: OFFICE_QUARTERS.map(q => classCPlusMap.get(q) ?? null)
   };
 }
 
-function createOfficeLineChart(canvasId, labels, aValues, bValues, yAxisFormatter) {
+function createOfficeLineChart(canvasId, labels, aValues, bValues, cPlusValues, yAxisFormatter) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return null;
 
@@ -785,6 +805,17 @@ function createOfficeLineChart(canvasId, labels, aValues, bValues, yAxisFormatte
           data: bValues,
           borderColor: "#d46b08",
           backgroundColor: "rgba(212,107,8,0.12)",
+          tension: 0.35,
+          fill: false,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 5
+        },
+        {
+          label: "Class C+",
+          data: cPlusValues,
+          borderColor: "#6b7280",
+          backgroundColor: "rgba(107,114,128,0.12)",
           tension: 0.35,
           fill: false,
           borderWidth: 3,
@@ -834,6 +865,7 @@ function renderOfficeTrendCharts(historyFeatures) {
     rentSeries.labels,
     rentSeries.classAValues,
     rentSeries.classBValues,
+    rentSeries.classCPlusValues,
     value => `$${Number(value).toFixed(0)}`
   );
 
@@ -842,6 +874,7 @@ function renderOfficeTrendCharts(historyFeatures) {
     vacancySeries.labels,
     vacancySeries.classAValues,
     vacancySeries.classBValues,
+    vacancySeries.classCPlusValues,
     value => `${Number(value).toFixed(0)}%`
   );
 }
@@ -877,22 +910,23 @@ async function loadOfficeStats() {
 
     if (!currentFeatures.length) {
       resetOfficeUI();
-      alert("No office data found for the selected filters.");
+      console.warn("No office data found for the selected filters.");
       return;
     }
 
     const classA = findOfficeClassRecord(currentFeatures, "A");
     const classB = findOfficeClassRecord(currentFeatures, "B");
+    const classCPlus = findOfficeClassRecord(currentFeatures, "C+");
 
-    if (!classA && !classB) {
+    if (!classA && !classB && !classCPlus) {
       resetOfficeUI();
-      alert("No Class A / Class B office records were found.");
+      alert("No Class A / Class B / Class C+ office records were found.");
       return;
     }
 
-    updateOfficeCards(classA || {}, classB || {});
-    updateOfficeHighlights(classA || {}, classB || {});
-    renderOfficeDonut(classA || {}, classB || {});
+    updateOfficeCards(classA || {}, classB || {}, classCPlus || {});
+    updateOfficeHighlights(classA || {}, classB || {}, classCPlus || {});
+    renderOfficeDonut(classA || {}, classB || {}, classCPlus || {});
     renderOfficeTrendCharts(historyFeatures);
   } catch (err) {
     console.error(err);
@@ -900,6 +934,7 @@ async function loadOfficeStats() {
     alert("Could not load office market statistics: " + err.message);
   }
 }
+
 
 ["officeYear", "officeQuarter", "officeArea"].forEach(id => {
   document.getElementById(id)?.addEventListener("change", () => {

@@ -989,7 +989,7 @@ body{
 
 .analyticsHero__text{
   margin: 0;
-  max-width: 980px;
+  max-width: none;
   font-size: 18px;
   line-height: 1.6;
   color: #3f4548;
@@ -1941,4 +1941,25 @@ section[data-section="office"] .officeCardTitle{
   background: rgba(255,255,255,.58);
   color: var(--orange);
   outline: none;
+}
+
+section[data-section="office"] .officeDashboardTop{
+  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
+}
+
+section[data-section="office"] .officeDonutCard{
+  min-height: 220px;
+}
+
+section[data-section="office"] .officeDonutWrap{
+  max-width: 210px;
+  height: 210px;
+}
+
+section[data-section="office"] .officeHeroCard{
+  justify-content: flex-start;
+}
+
+section[data-section="office"] .officeHeroCard .officeCardTitle{
+  margin-bottom: 18px;
 }
