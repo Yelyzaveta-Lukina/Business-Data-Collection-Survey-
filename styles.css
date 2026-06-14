@@ -472,6 +472,7 @@ body{
 .landingHeader{
   max-width: 980px;
   margin: 0 auto 38px;
+  text-align: center;  
 }
 
 .landingHeader__title{
@@ -489,6 +490,7 @@ body{
   font-size: 19px;
   line-height: 1.5;
   color: #1f2937;
+  text-align: center; 
 }
 
 .landingActions{

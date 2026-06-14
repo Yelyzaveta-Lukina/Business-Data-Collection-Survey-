@@ -7,6 +7,8 @@ const ORIGIN_LAYER_URL =
   "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Employees_Origin_Type/FeatureServer/0";
 const OFFICE_MARKET_LAYER_URL = 
 "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Office_Market_Stats_By_Class/FeatureServer/0";
+const REV_LAYER_URL =
+  "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Residents_Employees_Visitors_Stats/FeatureServer/0";
 
 
 const MONTHS = [
@@ -90,8 +92,17 @@ const originUploadStatus = document.getElementById("originUploadStatus");
 const officeAreaTypeEl = document.getElementById("officeAreaType");
 const officeClassAFileEl = document.getElementById("officeClassAFile");
 const officeClassBFileEl = document.getElementById("officeClassBFile");
+const officeClassCPlusFileEl = document.getElementById("officeClassCPlusFile");
 const officeUploadBtn = document.getElementById("officeUploadBtn");
 const officeUploadStatus = document.getElementById("officeUploadStatus");
+const revAreaTypeEl = document.getElementById("revAreaType");
+const revReportYearEl = document.getElementById("revReportYear");
+const revReportMonthEl = document.getElementById("revReportMonth");
+const revResidentsEl = document.getElementById("revResidents");
+const revEmployeesEl = document.getElementById("revEmployees");
+const revVisitorsEl = document.getElementById("revVisitors");
+const revSaveBtn = document.getElementById("revSaveBtn");
+const revStatus = document.getElementById("revStatus");
 
 
 // 3) STATE
@@ -148,6 +159,41 @@ function showOfficeUploadStatus(msg, kind) {
   officeUploadStatus.style.display = "block";
   officeUploadStatus.className = "status " + (kind === "ok" ? "status--ok" : "status--err");
   officeUploadStatus.textContent = msg;
+}
+
+function showRevStatus(msg, kind) {
+  if (!msg) {
+    revStatus.className = "status";
+    revStatus.style.display = "none";
+    revStatus.textContent = "";
+    return;
+  }
+
+  revStatus.style.display = "block";
+  revStatus.className = "status " + (kind === "ok" ? "status--ok" : "status--err");
+  revStatus.textContent = msg;
+}
+
+function isValidRevNumber(value) {
+  return /^(0|[1-9]\d*)$/.test(String(value).trim());
+}
+
+async function getExistingRevRecord(year, month, areaType) {
+  const safeAreaType = String(areaType).replace(/'/g, "''");
+
+  const where =
+    `report_year=${Number(year)} ` +
+    `AND report_month=${Number(month)} ` +
+    `AND area_type='${safeAreaType}'`;
+
+  const data = await postForm(`${REV_LAYER_URL}/query`, {
+    f: "json",
+    where,
+    outFields: "OBJECTID,report_year,report_month,area_type",
+    returnGeometry: "false"
+  });
+
+  return data?.features?.[0] || null;
 }
 
 
@@ -585,6 +631,118 @@ saveBtn.addEventListener("click", async () => {
     // ✅ guarantee button never stays stuck
     saveBtn.disabled = false;
     saveBtn.textContent = originalText || "Save Changes";
+  }
+});
+
+revSaveBtn.addEventListener("click", async () => {
+  if (revSaveBtn.disabled) return;
+
+  const originalText = revSaveBtn.textContent;
+  revSaveBtn.disabled = true;
+  revSaveBtn.textContent = "Saving…";
+
+  try {
+    const reportYear = revReportYearEl.value;
+    const reportMonth = revReportMonthEl.value;
+    const areaType = revAreaTypeEl.value;
+
+    const residents = revResidentsEl.value.trim();
+    const employees = revEmployeesEl.value.trim();
+    const visitors = revVisitorsEl.value.trim();
+
+    if (!reportYear) {
+      showRevStatus("Please select a report year.", "err");
+      return;
+    }
+
+    if (!reportMonth) {
+      showRevStatus("Please select a report month.", "err");
+      return;
+    }
+
+    if (!areaType) {
+      showRevStatus("Please select an area type.", "err");
+      return;
+    }
+
+    if (!isValidRevNumber(residents)) {
+      showRevStatus("Residents must be a whole number and must not be negative.", "err");
+      return;
+    }
+
+    if (!isValidRevNumber(employees)) {
+      showRevStatus("Employees must be a whole number and must not be negative.", "err");
+      return;
+    }
+
+    if (!isValidRevNumber(visitors)) {
+      showRevStatus("Visitors must be a whole number and must not be negative.", "err");
+      return;
+    }
+
+    const existingRecord = await getExistingRevRecord(reportYear, reportMonth, areaType);
+
+    const attrs = {
+      report_year: Number(reportYear),
+      report_month: Number(reportMonth),
+      area_type: areaType,
+      residents: Number(residents),
+      employees: Number(employees),
+      visitors: Number(visitors)
+    };
+
+    let data;
+
+    if (existingRecord) {
+      attrs.OBJECTID = existingRecord.attributes.OBJECTID;
+
+      data = await postForm(`${REV_LAYER_URL}/applyEdits`, {
+        f: "json",
+        updates: JSON.stringify([{ attributes: attrs }])
+      });
+
+      const result = data?.updateResults?.[0];
+
+      if (!result?.success) {
+        throw new Error("Update failed: " + JSON.stringify(data));
+      }
+
+      showRevStatus("Statistics were updated successfully.", "ok");
+      revReportYearEl.value = "";
+      revReportMonthEl.value = "";
+      revAreaTypeEl.value = "";
+
+      revResidentsEl.value = 0;
+      revEmployeesEl.value = 0;
+      revVisitorsEl.value = 0;;
+    } else {
+      data = await postForm(`${REV_LAYER_URL}/applyEdits`, {
+        f: "json",
+        adds: JSON.stringify([{ attributes: attrs }])
+      });
+
+      const result = data?.addResults?.[0];
+
+      if (!result?.success) {
+        throw new Error("Save failed: " + JSON.stringify(data));
+      }
+
+      showRevStatus("Statistics were saved successfully.", "ok");
+      revReportYearEl.value = "";
+      revReportMonthEl.value = "";
+      revAreaTypeEl.value = "";
+
+      revResidentsEl.value = 0;
+      revEmployeesEl.value = 0;
+      revVisitorsEl.value = 0;;
+    }
+
+  } catch (err) {
+    console.error(err);
+    showRevStatus("Could not save statistics. " + err.message, "err");
+  } finally {
+    revSaveBtn.disabled = false;
+    revSaveBtn.textContent = originalText;
   }
 });
 
@@ -1112,14 +1270,15 @@ officeUploadBtn.addEventListener("click", async () => {
     const areaType = officeAreaTypeEl.value;
     const classAFile = officeClassAFileEl.files[0];
     const classBFile = officeClassBFileEl.files[0];
+    const classCPlusFile = officeClassCPlusFileEl.files[0];
 
     if (!areaType) {
       showOfficeUploadStatus("Please select an area type.", "err");
       return;
     }
 
-    if (!classAFile && !classBFile) {
-      showOfficeUploadStatus("Please upload at least one file: Class A or Class B.", "err");
+    if (!classAFile && !classBFile && !classCPlusFile) {
+      showOfficeUploadStatus("Please upload at least one file: Class A, Class B, or Class C+.", "err");
       return;
     }
 
@@ -1178,6 +1337,32 @@ officeUploadBtn.addEventListener("click", async () => {
       updatedClasses.push("Class B");
     }
 
+    if (classCPlusFile) {
+      const data = classCPlusFile.name.toLowerCase().endsWith(".csv")
+        ? await readCsvFile(classCPlusFile)
+        : await readExcelFile(classCPlusFile);
+
+      const records = buildOfficeMarketRecords(
+        data.rows,
+        data.headers,
+        { areaType, fileName: classCPlusFile.name },
+        "C+"
+      );
+
+      if (!records.length) {
+        throw new Error(`No valid quarterly records were found in ${classCPlusFile.name}.`);
+      }
+
+      const existingIds = await getExistingOfficeMarketObjectIdsByClass(areaType, "C+");
+      if (existingIds.length) {
+        await deleteOfficeMarketRecords(existingIds);
+      }
+
+      await addOfficeMarketRecords(records);
+      totalInserted += records.length;
+      updatedClasses.push("Class C+");
+    }
+
     showOfficeUploadStatus(
       `Upload successful.\nUpdated: ${updatedClasses.join(", ")}\nInserted records: ${totalInserted}`,
       "ok"
@@ -1185,6 +1370,8 @@ officeUploadBtn.addEventListener("click", async () => {
 
     officeClassAFileEl.value = "";
     officeClassBFileEl.value = "";
+    officeClassCPlusFileEl.value = "";
+
   } catch (e) {
     console.error(e);
     showOfficeUploadStatus(
