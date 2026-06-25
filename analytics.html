@@ -109,7 +109,7 @@
             </div>
 
             <div class="analyticsKpiCard">
-              <div class="analyticsKpiCard__label">Total Employees</div>
+              <div class="analyticsKpiCard__label">Average of Total Employees</div>
               <div id="totalEmployees" class="analyticsKpiCard__value">--</div>
             </div>
 
@@ -158,21 +158,13 @@
             </div>
 
             <div class="analyticsFilterCard">
-              <label class="label" for="originAnalyticsMonth">Report Month</label>
-              <select id="originAnalyticsMonth" class="input">
-                <option value="">Select month</option>
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
+              <label class="label" for="originAnalyticsQuarter">Fiscal Quarter</label>
+              <select id="originAnalyticsQuarter" class="input">
+                <option value="">Select quarter</option>
+                <option value="Q1">Q1 (Oct–Dec)</option>
+                <option value="Q2">Q2 (Jan–Mar)</option>
+                <option value="Q3">Q3 (Apr–Jun)</option>
+                <option value="Q4">Q4 (Jul–Sep)</option>
               </select>
             </div>
 
@@ -186,11 +178,15 @@
             </div>
           </section>
 
+          <p class="fiscalYearNote">
+            Note: City of Coral Gables fiscal year starts on October 1 of the previous calendar year and ends on September 30.
+          </p>
+
           <section class="analyticsOriginMapCard">
             <div class="analyticsOriginMapHead">
               <h3 class="analyticsChartCardNew__title">Employees Origin Map</h3>
               <p id="originMapMessage" class="analyticsOriginMessage">
-                Select report year, month, and area type to load the map.
+                Select fiscal year, fiscal quarter, and area type to load the map.
               </p>
             </div>
 
@@ -286,9 +282,21 @@
     </div>
   </section>
 
-  <p class="analyticsSectionSubtitle">
-  Data Source: CoStar Office Market Reports.
+  <div class="officeSourceInfo">
+  <p class="analyticsSectionSubtitle officeSourceInfo__source">
+    Data Source: CoStar Office Market Reports.
   </p>
+
+  <details class="officeClassInfo">
+    <summary>ⓘ What do Class A, B and C+ mean?</summary>
+
+    <div class="officeClassInfo__content">
+      <p><strong>Class A:</strong> Highest-quality buildings. Usually newer, best locations, modern systems, strong amenities, high rents, low risk.</p>
+      <p><strong>Class B:</strong> Good/average-quality buildings. Usually older than Class A, decent location and condition, average rents, moderate risk.</p>
+      <p><strong>Class C+:</strong> Slightly better than Class C, but not quite Class B. It may have some improvements, better location, or fewer condition problems than a typical Class C property.</p>
+    </div>
+  </details>
+</div>
 
   <section class="officeDashboardTop">
     <div class="officeHeroCard">
@@ -397,7 +405,7 @@
   <article class="officeHighlightCard">
     <div class="officeHighlightCard__label">Rent Spread</div>
     <div id="officeRentSpread" class="officeHighlightCard__value">--</div>
-    <div class="officeHighlightCard__meta">Class A rent minus Class B rent</div>
+    <div class="officeHighlightCard__meta">Highest class rent minus lowest class rent</div>
   </article>
 </section>
 
@@ -422,6 +430,115 @@
     </div>
   </article>
 </section>
+</section>
+
+  <section class="analyticsSectionCard analyticsContentSection" data-section="rev">
+  <div class="analyticsSectionHead">
+    <div>
+      <h2 class="analyticsSectionTitle">Residents / Employees / Visitors</h2>
+      <p class="analyticsSectionSubtitle">
+        Review monthly residents, employees, and visitors statistics by year, month, and area type.
+      </p>
+      <p id="revAnalyticsMessage" class="analyticsOriginMessage">
+        Select year, month, and area type to load statistics.
+      </p>
+    </div>
+  </div>
+
+  <section class="revFiltersRow">
+    <div class="analyticsFilterCard">
+      <label class="label" for="revAnalyticsYear">Year</label>
+      <select id="revAnalyticsYear" class="input">
+        <option value="">Select year</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+      </select>
+    </div>
+
+    <div class="analyticsFilterCard">
+      <label class="label" for="revAnalyticsMonth">Month</label>
+      <select id="revAnalyticsMonth" class="input">
+        <option value="">Select month</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div>
+
+    <div class="analyticsFilterCard">
+      <label class="label" for="revAnalyticsArea">Area Type</label>
+      <select id="revAnalyticsArea" class="input">
+        <option value="">Select area type</option>
+        <option value="CBD">CBD</option>
+        <option value="Citywide">Citywide</option>
+      </select>
+    </div>
+  </section>
+
+
+  <section class="revKpiGrid">
+    <div class="analyticsKpiCard">
+      <div class="analyticsKpiCard__label">Residents</div>
+      <div id="revResidentsValue" class="analyticsKpiCard__value">--</div>
+    </div>
+
+    <div class="analyticsKpiCard">
+      <div class="analyticsKpiCard__label">Employees</div>
+      <div id="revEmployeesValue" class="analyticsKpiCard__value">--</div>
+    </div>
+
+    <div class="analyticsKpiCard">
+      <div class="analyticsKpiCard__label">Visitors</div>
+      <div id="revVisitorsValue" class="analyticsKpiCard__value">--</div>
+    </div>
+  </section>
+
+  <section class="revChartsGrid">
+    <article class="revChartCard">
+      <h3 class="officeCardTitle">Monthly Comparison</h3>
+      <p class="officeTrendCard__subtext">Residents vs Employees vs Visitors for selected month</p>
+      <div class="revChartWrap">
+        <canvas id="revComparisonChart"></canvas>
+      </div>
+    </article>
+
+    <article class="revChartCard">
+      <h3 class="officeCardTitle">Monthly Trend</h3>
+      <p class="officeTrendCard__subtext">Trend across months for selected year and area</p>
+      <div class="revChartWrap">
+        <canvas id="revTrendChart"></canvas>
+      </div>
+    </article>
+  </section>
+
+  <section class="revChangeGrid">
+    <article class="officeHighlightCard">
+      <div class="officeHighlightCard__label">Residents Change</div>
+      <div id="revResidentsChange" class="officeHighlightCard__value">--</div>
+      <div class="officeHighlightCard__meta">Compared with previous month</div>
+    </article>
+
+    <article class="officeHighlightCard">
+      <div class="officeHighlightCard__label">Employees Change</div>
+      <div id="revEmployeesChange" class="officeHighlightCard__value">--</div>
+      <div class="officeHighlightCard__meta">Compared with previous month</div>
+    </article>
+
+    <article class="officeHighlightCard">
+      <div class="officeHighlightCard__label">Visitors Change</div>
+      <div id="revVisitorsChange" class="officeHighlightCard__value">--</div>
+      <div class="officeHighlightCard__meta">Compared with previous month</div>
+    </article>
+  </section>
 </section>
 
       </section>

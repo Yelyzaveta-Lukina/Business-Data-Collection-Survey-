@@ -10,6 +10,9 @@ const EMPLOYEES_ORIGIN_LAYER_URL =
 const OFFICE_LAYER_URL = 
   "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Office_Market_Stats_By_Class/FeatureServer/0";
 
+const REV_LAYER_URL =
+  "https://services1.arcgis.com/ug7Y0GY6kYE0tf0p/arcgis/rest/services/Residents_Employees_Visitors_Stats/FeatureServer/0";
+
 const BUSINESS_FIELDS = [
   { name: "professional_scientific_technical", label: "Professional, Scientific, and Technical Services" },
   { name: "finance_insurance", label: "Finance and Insurance" },
@@ -77,7 +80,7 @@ const analyticsMenuItems = document.querySelectorAll(".analyticsMenuItem");
 const analyticsContentSections = document.querySelectorAll(".analyticsContentSection");
 
 const originAnalyticsYearEl = document.getElementById("originAnalyticsYear");
-const originAnalyticsMonthEl = document.getElementById("originAnalyticsMonth");
+const originAnalyticsQuarterEl = document.getElementById("originAnalyticsQuarter");
 const originAnalyticsAreaTypeEl = document.getElementById("originAnalyticsAreaType");
 const originMapMessageEl = document.getElementById("originMapMessage");
 const originTotalEmployeesEl = document.getElementById("originTotalEmployees");
@@ -86,6 +89,19 @@ const originTopZipEl = document.getElementById("originTopZip");
 const originTopCityEl = document.getElementById("originTopCity");
 const originTopTableBodyEl = document.getElementById("originTopTableBody");
 
+const revAnalyticsYearEl = document.getElementById("revAnalyticsYear");
+const revAnalyticsMonthEl = document.getElementById("revAnalyticsMonth");
+const revAnalyticsAreaEl = document.getElementById("revAnalyticsArea");
+const revAnalyticsMessageEl = document.getElementById("revAnalyticsMessage");
+
+const revResidentsValueEl = document.getElementById("revResidentsValue");
+const revEmployeesValueEl = document.getElementById("revEmployeesValue");
+const revVisitorsValueEl = document.getElementById("revVisitorsValue");
+
+const revResidentsChangeEl = document.getElementById("revResidentsChange");
+const revEmployeesChangeEl = document.getElementById("revEmployeesChange");
+const revVisitorsChangeEl = document.getElementById("revVisitorsChange");
+
 /* -----------------------------
    State
 ----------------------------- */
@@ -93,6 +109,9 @@ let businessChart = null;
 let employeesChart = null;
 let originMap = null;
 let originMarkersLayer = null;
+
+let revComparisonChart = null;
+let revTrendChart = null;
 
 /* -----------------------------
    Helpers
@@ -334,7 +353,7 @@ function makeOriginDivIcon(value) {
   });
 }
 
-function resetOriginAnalyticsUI(message = "Select report year, month, and area type to load the map.") {
+function resetOriginAnalyticsUI(message = "Select fiscal year, fiscal quarter, and area type to load the map.") {
   if (originMapMessageEl) originMapMessageEl.textContent = message;
   if (originTotalEmployeesEl) originTotalEmployeesEl.textContent = "--";
   if (originTotalAreasEl) originTotalAreasEl.textContent = "--";
@@ -352,39 +371,65 @@ function resetOriginAnalyticsUI(message = "Select report year, month, and area t
   clearOriginMap();
 }
 
-async function queryEmployeesOriginFeatures(year, month, areaType) {
+function getFiscalQuarterMonths(fiscalYear, quarter) {
+  const fy = Number(fiscalYear);
+
+  if (quarter === "Q1") {
+    return [
+      { year: fy - 1, month: 10 },
+      { year: fy - 1, month: 11 },
+      { year: fy - 1, month: 12 }
+    ];
+  }
+
+  if (quarter === "Q2") {
+    return [
+      { year: fy, month: 1 },
+      { year: fy, month: 2 },
+      { year: fy, month: 3 }
+    ];
+  }
+
+  if (quarter === "Q3") {
+    return [
+      { year: fy, month: 4 },
+      { year: fy, month: 5 },
+      { year: fy, month: 6 }
+    ];
+  }
+
+  if (quarter === "Q4") {
+    return [
+      { year: fy, month: 7 },
+      { year: fy, month: 8 },
+      { year: fy, month: 9 }
+    ];
+  }
+
+  return [];
+}
+
+async function queryEmployeesOriginFeatures(fiscalYear, quarter, areaType) {
   const safeAreaType = String(areaType).replace(/'/g, "''");
+  const months = getFiscalQuarterMonths(fiscalYear, quarter);
+
+  const periodWhere = months
+    .map(p => `(report_year = ${p.year} AND report_month = ${p.month})`)
+    .join(" OR ");
 
   const where =
-    `report_year = ${Number(year)} ` +
-    `AND report_month = ${Number(month)} ` +
+    `(${periodWhere}) ` +
     `AND area_type = '${safeAreaType}'`;
 
-  try {
-    const data = await postForm(`${EMPLOYEES_ORIGIN_LAYER_URL}/query`, {
-      f: "json",
-      where,
-      outFields: "report_year,report_month,area_type,employees,zipcode,city,lng,lat",
-      returnGeometry: "true",
-      outSR: "4326"
-    });
+  const data = await postForm(`${EMPLOYEES_ORIGIN_LAYER_URL}/query`, {
+    f: "json",
+    where,
+    outFields: "report_year,report_month,area_type,employees,zipcode,city,lng,lat",
+    returnGeometry: "true",
+    outSR: "4326"
+  });
 
-    console.log("Employees Origin query worked with where:", where);
-    return data?.features || [];
-  } catch (err) {
-    console.warn("Main Employees Origin query failed:", where, err.message);
-
-    const debugData = await postForm(`${EMPLOYEES_ORIGIN_LAYER_URL}/query`, {
-      f: "json",
-      where: "1=1",
-      outFields: "*",
-      returnGeometry: "false",
-      resultRecordCount: 5
-    });
-
-    console.log("Employees Origin sample records:", debugData?.features || []);
-    throw err;
-  }
+  return data?.features || [];
 }
 
 function getLatLngFromFeature(feature) {
@@ -521,18 +566,18 @@ function renderOriginMap(features) {
 
 async function loadOriginAnalytics() {
   const year = originAnalyticsYearEl?.value;
-  const month = originAnalyticsMonthEl?.value;
+  const quarter = originAnalyticsQuarterEl?.value;
   const areaType = originAnalyticsAreaTypeEl?.value;
 
-  if (!year || !month || !areaType) {
-    resetOriginAnalyticsUI("Select report year, month, and area type to load the map.");
-    return;
-  }
+  if (!year || !quarter || !areaType) {
+  resetOriginAnalyticsUI("Select fiscal year, fiscal quarter, and area type to load the map.");
+  return;
+}
 
   originMapMessageEl.textContent = "Loading employees origin data...";
 
   try {
-    const features = await queryEmployeesOriginFeatures(year, month, areaType);
+    const features = await queryEmployeesOriginFeatures(year, quarter, areaType);
 
     if (!features.length) {
       resetOriginAnalyticsUI("No records found for this period of time.");
@@ -540,7 +585,7 @@ async function loadOriginAnalytics() {
     }
 
     originMapMessageEl.textContent =
-      `Showing ${features.length.toLocaleString()} origin areas for ${areaType}, ${year}, month ${month}.`;
+      `Showing ${features.length.toLocaleString()} origin records for ${areaType}, FY${year} ${quarter}.`;
 
     updateOriginKPIs(features);
     updateOriginTable(features);
@@ -680,34 +725,31 @@ function updateOfficeCards(classA, classB, classCPlus) {
 }
 
 function updateOfficeHighlights(classA, classB, classCPlus) {
-  const aSF = Number(classA?.total_sf || 0);
-  const bSF = Number(classB?.total_sf || 0);
-  const cPlusSF = Number(classCPlus?.total_sf || 0);
-  const totalSF = aSF + bSF + cPlusSF;
+  const classes = [classA, classB, classCPlus].filter(c => Number(c?.total_sf || 0) > 0);
+
+  const totalSF = classes.reduce((sum, c) => sum + Number(c.total_sf || 0), 0);
 
   const weightedRent =
     totalSF > 0
-      ? (
-          (aSF * Number(classA?.market_asking_rent_sf || 0)) +
-          (bSF * Number(classB?.market_asking_rent_sf || 0)) +
-          (cPlusSF * Number(classCPlus?.market_asking_rent_sf || 0))
+      ? classes.reduce(
+          (sum, c) => sum + Number(c.total_sf || 0) * Number(c.market_asking_rent_sf || 0),
+          0
         ) / totalSF
       : 0;
 
-  const rentSpread =
-    Number(classA?.market_asking_rent_sf || 0) -
-    Number(classB?.market_asking_rent_sf || 0);
+  const rents = classes
+    .map(c => Number(c.market_asking_rent_sf || 0))
+    .filter(r => Number.isFinite(r) && r > 0);
 
-  const weightedRentEl = document.getElementById("officeWeightedRent");
-  const rentSpreadEl = document.getElementById("officeRentSpread");
+  const rentSpread = rents.length
+    ? Math.max(...rents) - Math.min(...rents)
+    : 0;
 
-  if (weightedRentEl) {
-    weightedRentEl.textContent = formatOfficeCurrency(weightedRent);
-  }
+  document.getElementById("officeWeightedRent").textContent =
+  `${formatOfficeCurrency(weightedRent)}/SF`;
 
-  if (rentSpreadEl) {
-    rentSpreadEl.textContent = `${rentSpread >= 0 ? "+" : "-"}$${Math.abs(rentSpread).toFixed(2)}`;
-  }
+document.getElementById("officeRentSpread").textContent =
+  `${formatOfficeCurrency(rentSpread)}/SF`;
 }
 
 function renderOfficeDonut(classA, classB, classCPlus) {
@@ -942,6 +984,300 @@ async function loadOfficeStats() {
   });
 });
 
+
+/* -----------------------------
+   SECTION 4: Residents / Employees / Visitors
+----------------------------- */
+
+const REV_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+function resetRevAnalyticsUI(message = "Select year, month, and area type to load statistics.") {
+  if (revAnalyticsMessageEl) revAnalyticsMessageEl.textContent = message;
+
+  if (revResidentsValueEl) revResidentsValueEl.textContent = "--";
+  if (revEmployeesValueEl) revEmployeesValueEl.textContent = "--";
+  if (revVisitorsValueEl) revVisitorsValueEl.textContent = "--";
+
+  if (revResidentsChangeEl) revResidentsChangeEl.textContent = "--";
+  if (revEmployeesChangeEl) revEmployeesChangeEl.textContent = "--";
+  if (revVisitorsChangeEl) revVisitorsChangeEl.textContent = "--";
+
+  if (revComparisonChart) revComparisonChart.destroy();
+  if (revTrendChart) revTrendChart.destroy();
+
+  revComparisonChart = null;
+  revTrendChart = null;
+}
+
+async function queryRevFeatures(where, outFields = "*", orderByFields = "") {
+  const params = {
+    f: "json",
+    where,
+    outFields,
+    returnGeometry: "false"
+  };
+
+  if (orderByFields) {
+    params.orderByFields = orderByFields;
+  }
+
+  const data = await postForm(`${REV_LAYER_URL}/query`, params);
+  return data.features || [];
+}
+
+function getPreviousMonthInfo(year, month) {
+  const y = Number(year);
+  const m = Number(month);
+
+  if (m === 1) {
+    return { year: y - 1, month: 12 };
+  }
+
+  return { year: y, month: m - 1 };
+}
+
+function formatRevNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function calculatePercentChange(currentValue, previousValue) {
+  const current = Number(currentValue || 0);
+  const previous = Number(previousValue || 0);
+
+  if (!previous) return "N/A";
+
+  const change = ((current - previous) / previous) * 100;
+  const sign = change > 0 ? "+" : "";
+
+  return `${sign}${change.toFixed(1)}%`;
+}
+
+function updateRevKPIs(record) {
+  const attrs = record?.attributes || {};
+
+  revResidentsValueEl.textContent = formatRevNumber(attrs.residents);
+  revEmployeesValueEl.textContent = formatRevNumber(attrs.employees);
+  revVisitorsValueEl.textContent = formatRevNumber(attrs.visitors);
+}
+
+function setRevChangeValue(element, currentValue, previousValue) {
+  const current = Number(currentValue || 0);
+  const previous = Number(previousValue || 0);
+
+  element.classList.remove(
+    "revChangeValue--positive",
+    "revChangeValue--negative",
+    "revChangeValue--neutral"
+  );
+
+  if (!previous) {
+    element.textContent = "N/A";
+    element.classList.add("revChangeValue--neutral");
+    return;
+  }
+
+  const change = ((current - previous) / previous) * 100;
+  const sign = change > 0 ? "+" : "";
+
+  element.textContent = `${sign}${change.toFixed(1)}%`;
+
+  if (change > 0) {
+    element.classList.add("revChangeValue--positive");
+  } else if (change < 0) {
+    element.classList.add("revChangeValue--negative");
+  } else {
+    element.classList.add("revChangeValue--neutral");
+  }
+}
+
+function updateRevPercentChanges(currentRecord, previousRecord) {
+  const current = currentRecord?.attributes || {};
+  const previous = previousRecord?.attributes || {};
+
+  setRevChangeValue(revResidentsChangeEl, current.residents, previous.residents);
+  setRevChangeValue(revEmployeesChangeEl, current.employees, previous.employees);
+  setRevChangeValue(revVisitorsChangeEl, current.visitors, previous.visitors);
+}
+
+
+function renderRevComparisonChart(record) {
+  const canvas = document.getElementById("revComparisonChart");
+  if (!canvas) return;
+
+  if (revComparisonChart) revComparisonChart.destroy();
+
+  const attrs = record?.attributes || {};
+
+  revComparisonChart = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: ["Residents", "Employees", "Visitors"],
+      datasets: [{
+        label: "Selected Month",
+        data: [
+          Number(attrs.residents || 0),
+          Number(attrs.employees || 0),
+          Number(attrs.visitors || 0)
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => Number(value).toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderRevTrendChart(features) {
+  const canvas = document.getElementById("revTrendChart");
+  if (!canvas) return;
+
+  if (revTrendChart) revTrendChart.destroy();
+
+  const monthMap = new Map();
+
+  features.forEach(feature => {
+    const attrs = feature.attributes || {};
+    monthMap.set(Number(attrs.report_month), attrs);
+  });
+
+  const labels = REV_MONTHS;
+
+  const residentsValues = Array.from({ length: 12 }, (_, i) => {
+    return Number(monthMap.get(i + 1)?.residents ?? null);
+  });
+
+  const employeesValues = Array.from({ length: 12 }, (_, i) => {
+    return Number(monthMap.get(i + 1)?.employees ?? null);
+  });
+
+  const visitorsValues = Array.from({ length: 12 }, (_, i) => {
+    return Number(monthMap.get(i + 1)?.visitors ?? null);
+  });
+
+  revTrendChart = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Residents",
+          data: residentsValues,
+          borderWidth: 3,
+          tension: 0.35
+        },
+        {
+          label: "Employees",
+          data: employeesValues,
+          borderWidth: 3,
+          tension: 0.35
+        },
+        {
+          label: "Visitors",
+          data: visitorsValues,
+          borderWidth: 3,
+          tension: 0.35
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "bottom"
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => Number(value).toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+
+async function loadRevAnalytics() {
+  const year = revAnalyticsYearEl?.value;
+  const month = revAnalyticsMonthEl?.value;
+  const area = revAnalyticsAreaEl?.value;
+
+  if (!year || !month || !area) {
+    resetRevAnalyticsUI("Select year, month, and area type to load statistics.");
+    return;
+  }
+
+  revAnalyticsMessageEl.textContent = "Loading residents, employees, and visitors statistics...";
+
+  try {
+    const safeArea = String(area).replace(/'/g, "''");
+    const previous = getPreviousMonthInfo(year, month);
+
+    const currentWhere =
+      `report_year=${Number(year)} ` +
+      `AND report_month=${Number(month)} ` +
+      `AND area_type='${safeArea}'`;
+
+    const previousWhere =
+      `report_year=${previous.year} ` +
+      `AND report_month=${previous.month} ` +
+      `AND area_type='${safeArea}'`;
+
+    const trendWhere =
+      `report_year=${Number(year)} ` +
+      `AND area_type='${safeArea}'`;
+
+    const [currentFeatures, previousFeatures, trendFeatures] = await Promise.all([
+      queryRevFeatures(currentWhere),
+      queryRevFeatures(previousWhere),
+      queryRevFeatures(
+        trendWhere,
+        "report_year,report_month,area_type,residents,employees,visitors",
+        "report_month ASC"
+      )
+    ]);
+
+    if (!currentFeatures.length) {
+      resetRevAnalyticsUI("No statistics found for the selected month.");
+      return;
+    }
+
+    const currentRecord = currentFeatures[0];
+    const previousRecord = previousFeatures[0] || null;
+
+    revAnalyticsMessageEl.textContent =
+      `Showing statistics for ${area}, ${REV_MONTHS[Number(month) - 1]} ${year}.`;
+
+    updateRevKPIs(currentRecord);
+    updateRevPercentChanges(currentRecord, previousRecord);
+    renderRevComparisonChart(currentRecord);
+    renderRevTrendChart(trendFeatures);
+  } catch (err) {
+    console.error(err);
+    resetRevAnalyticsUI("Could not load residents, employees, and visitors statistics.");
+    alert("Could not load residents, employees, and visitors statistics: " + err.message);
+  }
+}
+
+
 /* -----------------------------
    Events
 ----------------------------- */
@@ -970,6 +1306,10 @@ analyticsMenuItems.forEach(btn => {
     if (section === "office") {
       loadOfficeStats();
     }
+
+    if (section === "rev") {
+      loadRevAnalytics();
+    }
   });
 });
 
@@ -977,18 +1317,31 @@ if (originAnalyticsYearEl) {
   originAnalyticsYearEl.addEventListener("change", loadOriginAnalytics);
 }
 
-if (originAnalyticsMonthEl) {
-  originAnalyticsMonthEl.addEventListener("change", loadOriginAnalytics);
+if (originAnalyticsQuarterEl) {
+  originAnalyticsQuarterEl.addEventListener("change", loadOriginAnalytics);
 }
 
 if (originAnalyticsAreaTypeEl) {
   originAnalyticsAreaTypeEl.addEventListener("change", loadOriginAnalytics);
 }
 
+if (revAnalyticsYearEl) {
+  revAnalyticsYearEl.addEventListener("change", loadRevAnalytics);
+}
+
+if (revAnalyticsMonthEl) {
+  revAnalyticsMonthEl.addEventListener("change", loadRevAnalytics);
+}
+
+if (revAnalyticsAreaEl) {
+  revAnalyticsAreaEl.addEventListener("change", loadRevAnalytics);
+}
+
 /* -----------------------------
    Init
 ----------------------------- */
 resetOriginAnalyticsUI();
+resetRevAnalyticsUI();
 initOriginMap();
 
 loadAnalytics().catch(err => {
