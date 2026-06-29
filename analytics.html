@@ -103,23 +103,23 @@
           </section>
 
           <section class="analyticsKpiGrid">
-            <div class="analyticsKpiCard">
+            <div class="analyticsKpiCard analyticsKpiCard">
               <div class="analyticsKpiCard__label">Total Businesses</div>
               <div id="totalBusinesses" class="analyticsKpiCard__value">--</div>
             </div>
 
-            <div class="analyticsKpiCard">
+            <div class="analyticsKpiCard analyticsKpiCard">
               <div class="analyticsKpiCard__label">Average of Total Employees</div>
               <div id="totalEmployees" class="analyticsKpiCard__value">--</div>
             </div>
 
-            <div class="analyticsKpiCard">
+            <div class="analyticsKpiCard analyticsKpiCard">
               <div class="analyticsKpiCard__label">Top Industry (based on employees count)</div>
               <div id="topIndustry" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
             </div>
           </section>
 
-          <section class="analyticsChartsGrid">
+                    <section class="analyticsChartsGrid">
             <div class="analyticsChartCardNew">
               <h3 class="analyticsChartCardNew__title">Businesses by Industry</h3>
               <div class="analyticsChartCanvasWrap">
@@ -134,6 +134,147 @@
               </div>
             </div>
           </section>
+
+          <section class="industrySubsectionCard">
+            <h3 class="analyticsChartCardNew__title">Quarter Comparison</h3>
+
+            <div class="comparisonSelectors">
+              <div class="analyticsFilterCard">
+                <label class="label" for="compareYearA">Year A</label>
+                <select id="compareYearA" class="input">
+                  <option value="">Select year</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                </select>
+
+                <label class="label fieldSpace" for="compareQuarterA">Quarter A</label>
+                <select id="compareQuarterA" class="input">
+                  <option value="">Select quarter</option>
+                  <option value="Q1">Q1 (Jan–Mar)</option>
+                  <option value="Q2">Q2 (Apr–Jun)</option>
+                  <option value="Q3">Q3 (Jul–Sep)</option>
+                  <option value="Q4">Q4 (Oct–Dec)</option>
+                </select>
+              </div>
+
+              <div class="analyticsFilterCard">
+                <label class="label" for="compareYearB">Year B</label>
+                <select id="compareYearB" class="input">
+                  <option value="">Select year</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                </select>
+
+                <label class="label fieldSpace" for="compareQuarterB">Quarter B</label>
+                <select id="compareQuarterB" class="input">
+                  <option value="">Select quarter</option>
+                  <option value="Q1">Q1 (Jan–Mar)</option>
+                  <option value="Q2">Q2 (Apr–Jun)</option>
+                  <option value="Q3">Q3 (Jul–Sep)</option>
+                  <option value="Q4">Q4 (Oct–Dec)</option>
+                </select>
+              </div>
+            </div>
+
+            <section class="analyticsKpiGrid comparisonTotals--four">
+              <div class="analyticsKpiCard">
+                <div class="analyticsKpiCard__label">Business Change</div>
+                <div id="businessChange" class="analyticsKpiCard__value">--</div>
+              </div>
+
+              <div class="analyticsKpiCard">
+                <div class="analyticsKpiCard__label">Employee Change</div>
+                <div id="employeeChange" class="analyticsKpiCard__value">--</div>
+              </div>
+
+              <div class="analyticsKpiCard">
+                <div class="analyticsKpiCard__label">Top Growth Industry</div>
+                <div id="topGrowthIndustry" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+                <div id="topGrowthDetail" class="analyticsKpiCard__detail">--</div>
+              </div>
+
+              <div class="analyticsKpiCard">
+                <div class="analyticsKpiCard__label">Top Decline Industry</div>
+                <div id="topDeclineIndustry" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+                <div id="topDeclineDetail" class="analyticsKpiCard__detail">--</div>
+              </div>
+            </section>
+
+            <div id="comparisonSummary" class="comparisonSummary">
+              Select two year/quarter combinations to compare.
+            </div>
+
+            <section class="analyticsChartsGrid">
+              <div class="analyticsChartCardNew">
+                <h3 class="analyticsChartCardNew__title">Businesses Comparison by Industry</h3>
+                <div class="analyticsChartCanvasWrap">
+                  <canvas id="businessCompareChart"></canvas>
+                </div>
+              </div>
+
+              <div class="analyticsChartCardNew">
+                <h3 class="analyticsChartCardNew__title">Employees Comparison by Industry</h3>
+                <div class="analyticsChartCanvasWrap">
+                  <canvas id="employeesCompareChart"></canvas>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <section class="industrySubsectionCard">
+            <h3 class="analyticsChartCardNew__title">Quarterly Trend by Industry</h3>
+            <div class="hint">Select a year, data type, and industry to view the trend across Q1–Q4.</div>
+
+            <div class="trendSelectors">
+              <div class="analyticsFilterCard">
+                <label class="label" for="trendYear">Year</label>
+                <select id="trendYear" class="input">
+                  <option value="">Select year</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                </select>
+              </div>
+
+              <div class="analyticsFilterCard">
+                <label class="label" for="trendType">Data Type</label>
+                <select id="trendType" class="input">
+                  <option value="business">Businesses</option>
+                  <option value="employees">Employees</option>
+                </select>
+              </div>
+
+              <div class="analyticsFilterCard">
+                <label class="label" for="trendIndustry">Industry</label>
+                <select id="trendIndustry" class="input"></select>
+              </div>
+            </div>
+
+            <section class="analyticsKpiGrid trendMiniCards">
+              <div class="analyticsKpiCard">
+                <div class="analyticsKpiCard__label">Highest Quarter</div>
+                <div id="trendHighestQuarter" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+                <div id="trendHighestValue" class="analyticsKpiCard__detail">--</div>
+              </div>
+
+              <div class="analyticsKpiCard">
+                <div class="analyticsKpiCard__label">Lowest Quarter</div>
+                <div id="trendLowestQuarter" class="analyticsKpiCard__value analyticsKpiCard__value--small">--</div>
+                <div id="trendLowestValue" class="analyticsKpiCard__detail">--</div>
+              </div>
+            </section>
+
+            <div class="analyticsChartCardNew trendChartSection">
+              <h3 class="analyticsChartCardNew__title">Trend Across Quarters</h3>
+              <div class="analyticsChartCanvasWrap analyticsChartCanvasWrap--medium">
+                <canvas id="trendLineChart"></canvas>
+              </div>
+            </div>
+
+            <div id="trendSummary" class="comparisonSummary trendSummaryBox">
+              Select a year, data type, and industry to view quarterly trend details.
+            </div>
+          </section>
+
         </section>
 
         <!-- SECTION 2: EMPLOYEES ORIGIN -->
@@ -258,8 +399,7 @@
     <div class="officeFilterCard">
       <label class="label" for="officeYear">Year</label>
       <select id="officeYear" class="input">
-        <option value="2026">2026</option>
-        <option value="2027">2027</option>
+        <option value="">Select year</option>
       </select>
     </div>
 

@@ -76,6 +76,33 @@ const totalBusinessesEl = document.getElementById("totalBusinesses");
 const totalEmployeesEl = document.getElementById("totalEmployees");
 const topIndustryEl = document.getElementById("topIndustry");
 
+const compareYearAEl = document.getElementById("compareYearA");
+const compareQuarterAEl = document.getElementById("compareQuarterA");
+const compareYearBEl = document.getElementById("compareYearB");
+const compareQuarterBEl = document.getElementById("compareQuarterB");
+
+const businessChangeEl = document.getElementById("businessChange");
+const employeeChangeEl = document.getElementById("employeeChange");
+const comparisonSummaryEl = document.getElementById("comparisonSummary");
+const businessCompareCanvas = document.getElementById("businessCompareChart");
+const employeesCompareCanvas = document.getElementById("employeesCompareChart");
+
+const topGrowthIndustryEl = document.getElementById("topGrowthIndustry");
+const topGrowthDetailEl = document.getElementById("topGrowthDetail");
+const topDeclineIndustryEl = document.getElementById("topDeclineIndustry");
+const topDeclineDetailEl = document.getElementById("topDeclineDetail");
+
+const trendYearEl = document.getElementById("trendYear");
+const trendTypeEl = document.getElementById("trendType");
+const trendIndustryEl = document.getElementById("trendIndustry");
+const trendLineCanvas = document.getElementById("trendLineChart");
+const trendSummaryEl = document.getElementById("trendSummary");
+
+const trendHighestQuarterEl = document.getElementById("trendHighestQuarter");
+const trendHighestValueEl = document.getElementById("trendHighestValue");
+const trendLowestQuarterEl = document.getElementById("trendLowestQuarter");
+const trendLowestValueEl = document.getElementById("trendLowestValue");
+
 const analyticsMenuItems = document.querySelectorAll(".analyticsMenuItem");
 const analyticsContentSections = document.querySelectorAll(".analyticsContentSection");
 
@@ -107,6 +134,9 @@ const revVisitorsChangeEl = document.getElementById("revVisitorsChange");
 ----------------------------- */
 let businessChart = null;
 let employeesChart = null;
+let businessCompareChart = null;
+let employeesCompareChart = null;
+let trendLineChart = null;
 let originMap = null;
 let originMarkersLayer = null;
 
@@ -304,6 +334,382 @@ async function loadAnalytics() {
     employeeData.values
   );
 }
+
+function formatSignedNumber(value) {
+  const sign = value > 0 ? "+" : "";
+  return sign + value.toLocaleString();
+}
+
+function formatSignedPercentNumber(value) {
+  const sign = value > 0 ? "+" : "";
+  return sign + value.toFixed(1) + "%";
+}
+
+function calculatePercentChangeNumber(oldValue, newValue) {
+  if (oldValue === 0) {
+    if (newValue === 0) return 0;
+    return 100;
+  }
+
+  return ((newValue - oldValue) / oldValue) * 100;
+}
+
+function quarterToText(q, year) {
+  const map = {
+    Q1: "the first quarter",
+    Q2: "the second quarter",
+    Q3: "the third quarter",
+    Q4: "the fourth quarter"
+  };
+
+  return year ? `${map[q] || q} of ${year}` : map[q] || q;
+}
+
+function setChangeStyle(el, value) {
+  if (!el) return;
+
+  el.classList.remove(
+    "analyticsKpiCard__value--positive",
+    "analyticsKpiCard__value--negative"
+  );
+
+  if (value > 0) {
+    el.classList.add("analyticsKpiCard__value--positive");
+  } else if (value < 0) {
+    el.classList.add("analyticsKpiCard__value--negative");
+  }
+}
+
+function findTopGrowth(fields, attrsA, attrsB) {
+  let top = null;
+
+  fields.forEach(f => {
+    const a = Number(attrsA[f.name] ?? 0);
+    const b = Number(attrsB[f.name] ?? 0);
+    const diff = b - a;
+
+    if (!top || diff > top.diff) {
+      top = { label: f.label, diff, from: a, to: b };
+    }
+  });
+
+  return top;
+}
+
+function findTopDecline(fields, attrsA, attrsB) {
+  let top = null;
+
+  fields.forEach(f => {
+    const a = Number(attrsA[f.name] ?? 0);
+    const b = Number(attrsB[f.name] ?? 0);
+    const diff = b - a;
+
+    if (!top || diff < top.diff) {
+      top = { label: f.label, diff, from: a, to: b };
+    }
+  });
+
+  return top;
+}
+
+function createComparisonBarChart(canvas, labelA, labelB, labels, valuesA, valuesB, xAxisLabel) {
+  if (!canvas) return null;
+
+  return new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: labelA, data: valuesA, borderWidth: 1 },
+        { label: labelB, data: valuesB, borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: "y",
+      plugins: {
+        legend: {
+          display: true,
+          position: "top"
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: xAxisLabel
+          }
+        },
+        y: {
+          ticks: { font: { size: 12 } },
+          afterFit(scale) {
+            scale.width = 360;
+          }
+        }
+      }
+    }
+  });
+}
+
+async function loadComparisonAnalytics() {
+  const yearA = compareYearAEl?.value;
+  const quarterA = compareQuarterAEl?.value;
+  const yearB = compareYearBEl?.value;
+  const quarterB = compareQuarterBEl?.value;
+
+  if (!yearA || !quarterA || !yearB || !quarterB) {
+    if (businessChangeEl) businessChangeEl.textContent = "--";
+    if (employeeChangeEl) employeeChangeEl.textContent = "--";
+    if (topGrowthIndustryEl) topGrowthIndustryEl.textContent = "--";
+    if (topGrowthDetailEl) topGrowthDetailEl.textContent = "--";
+    if (topDeclineIndustryEl) topDeclineIndustryEl.textContent = "--";
+    if (topDeclineDetailEl) topDeclineDetailEl.textContent = "--";
+    if (comparisonSummaryEl) comparisonSummaryEl.textContent = "Select two year/quarter combinations to compare.";
+
+    destroyChart(businessCompareChart);
+    destroyChart(employeesCompareChart);
+    businessCompareChart = null;
+    employeesCompareChart = null;
+    return;
+  }
+
+  const [businessAttrsA, businessAttrsB, employeeAttrsA, employeeAttrsB] = await Promise.all([
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarterA, yearA, BUSINESS_FIELDS),
+    getQuarterAttributes(BUSINESS_LAYER_URL, quarterB, yearB, BUSINESS_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterA, yearA, EMPLOYEE_FIELDS),
+    getQuarterAttributes(EMPLOYEES_LAYER_URL, quarterB, yearB, EMPLOYEE_FIELDS)
+  ]);
+
+  const totalBusinessesA = sumValues(businessAttrsA, BUSINESS_FIELDS);
+  const totalBusinessesB = sumValues(businessAttrsB, BUSINESS_FIELDS);
+  const totalEmployeesA = sumValues(employeeAttrsA, EMPLOYEE_FIELDS);
+  const totalEmployeesB = sumValues(employeeAttrsB, EMPLOYEE_FIELDS);
+
+  const businessChange = totalBusinessesB - totalBusinessesA;
+  const employeeChange = totalEmployeesB - totalEmployeesA;
+
+  const businessPercent = calculatePercentChangeNumber(totalBusinessesA, totalBusinessesB);
+  const employeePercent = calculatePercentChangeNumber(totalEmployeesA, totalEmployeesB);
+
+  businessChangeEl.textContent =
+    `${formatSignedNumber(businessChange)} (${formatSignedPercentNumber(businessPercent)})`;
+
+  employeeChangeEl.textContent =
+    `${formatSignedNumber(employeeChange)} (${formatSignedPercentNumber(employeePercent)})`;
+
+  setChangeStyle(businessChangeEl, businessChange);
+  setChangeStyle(employeeChangeEl, employeeChange);
+
+  const quarterAText = quarterToText(quarterA, yearA);
+  const quarterBText = quarterToText(quarterB, yearB);
+
+  comparisonSummaryEl.textContent =
+    `During ${quarterAText}, total businesses were ${totalBusinessesA.toLocaleString()} and total employees were ${totalEmployeesA.toLocaleString()}. ` +
+    `During ${quarterBText}, total businesses were ${totalBusinessesB.toLocaleString()} and total employees were ${totalEmployeesB.toLocaleString()}.`;
+
+  const topGrowth = findTopGrowth(BUSINESS_FIELDS, businessAttrsA, businessAttrsB);
+  const topDecline = findTopDecline(BUSINESS_FIELDS, businessAttrsA, businessAttrsB);
+
+  if (topGrowth && topGrowth.diff > 0) {
+    topGrowthIndustryEl.textContent = topGrowth.label;
+    topGrowthDetailEl.textContent =
+      `+${topGrowth.diff.toLocaleString()} from ${topGrowth.from.toLocaleString()} to ${topGrowth.to.toLocaleString()}`;
+  } else {
+    topGrowthIndustryEl.textContent = "No growth";
+    topGrowthDetailEl.textContent = "No industry increased between selected quarters.";
+  }
+
+  if (topDecline && topDecline.diff < 0) {
+    topDeclineIndustryEl.textContent = topDecline.label;
+    topDeclineDetailEl.textContent =
+      `${topDecline.diff.toLocaleString()} from ${topDecline.from.toLocaleString()} to ${topDecline.to.toLocaleString()}`;
+  } else {
+    topDeclineIndustryEl.textContent = "No decline";
+    topDeclineDetailEl.textContent = "No industry decreased between selected quarters.";
+  }
+
+  const businessDataA = buildChartData(businessAttrsA, BUSINESS_FIELDS);
+  const businessDataB = buildChartData(businessAttrsB, BUSINESS_FIELDS);
+  const employeeDataA = buildChartData(employeeAttrsA, EMPLOYEE_FIELDS);
+  const employeeDataB = buildChartData(employeeAttrsB, EMPLOYEE_FIELDS);
+
+  destroyChart(businessCompareChart);
+  destroyChart(employeesCompareChart);
+
+  businessCompareChart = createComparisonBarChart(
+    businessCompareCanvas,
+    `${quarterA} ${yearA}`,
+    `${quarterB} ${yearB}`,
+    businessDataA.labels,
+    businessDataA.values,
+    businessDataB.values,
+    "Number of Businesses"
+  );
+
+  employeesCompareChart = createComparisonBarChart(
+    employeesCompareCanvas,
+    `${quarterA} ${yearA}`,
+    `${quarterB} ${yearB}`,
+    employeeDataA.labels,
+    employeeDataA.values,
+    employeeDataB.values,
+    "Number of Employees"
+  );
+}
+
+function getTrendFieldsByType(type) {
+  return type === "business" ? BUSINESS_FIELDS : EMPLOYEE_FIELDS;
+}
+
+function getTrendLayerUrlByType(type) {
+  return type === "business" ? BUSINESS_LAYER_URL : EMPLOYEES_LAYER_URL;
+}
+
+function populateTrendIndustryOptions() {
+  if (!trendTypeEl || !trendIndustryEl) return;
+
+  const fields = getTrendFieldsByType(trendTypeEl.value);
+  trendIndustryEl.innerHTML = "";
+
+  fields.forEach(field => {
+    const option = document.createElement("option");
+    option.value = field.name;
+    option.textContent = field.label;
+    trendIndustryEl.appendChild(option);
+  });
+}
+
+async function getAllQuarterAttributes(layerUrl, surveyYear, fields) {
+  const quarters = ["Q1", "Q2", "Q3", "Q4"];
+
+  const attributesList = await Promise.all(
+    quarters.map(q => getQuarterAttributes(layerUrl, q, surveyYear, fields))
+  );
+
+  return { quarters, attributesList };
+}
+
+function createTrendLineChart(canvas, label, labels, values, yAxisLabel) {
+  if (!canvas) return null;
+
+  return new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data: values,
+        tension: 0.25,
+        fill: false,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "top"
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Quarter"
+          }
+        },
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: yAxisLabel
+          }
+        }
+      }
+    }
+  });
+}
+
+function buildTrendSummary(typeLabel, industryLabel, quarterLabels, values) {
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const firstValue = values[0];
+  const lastValue = values[values.length - 1];
+  const diff = lastValue - firstValue;
+
+  const minQuarter = quarterLabels[values.indexOf(minValue)];
+  const maxQuarter = quarterLabels[values.indexOf(maxValue)];
+
+  let directionText = "did not change";
+  if (diff > 0) directionText = `increased by ${diff.toLocaleString()}`;
+  if (diff < 0) directionText = `decreased by ${Math.abs(diff).toLocaleString()}`;
+
+  return `${typeLabel} in ${industryLabel} ranged from ${minValue.toLocaleString()} in ${minQuarter} to ${maxValue.toLocaleString()} in ${maxQuarter}. From ${quarterLabels[0]} to ${quarterLabels[quarterLabels.length - 1]}, the value ${directionText}.`;
+}
+
+async function loadTrendAnalytics() {
+  const surveyYear = trendYearEl?.value;
+  const type = trendTypeEl?.value || "business";
+  const selectedFieldName = trendIndustryEl?.value;
+
+  if (!surveyYear || !selectedFieldName) {
+    if (trendSummaryEl) trendSummaryEl.textContent = "Select a year, data type, and industry to view quarterly trend details.";
+    if (trendHighestQuarterEl) trendHighestQuarterEl.textContent = "--";
+    if (trendHighestValueEl) trendHighestValueEl.textContent = "--";
+    if (trendLowestQuarterEl) trendLowestQuarterEl.textContent = "--";
+    if (trendLowestValueEl) trendLowestValueEl.textContent = "--";
+
+    destroyChart(trendLineChart);
+    trendLineChart = null;
+    return;
+  }
+
+  const fields = getTrendFieldsByType(type);
+  const layerUrl = getTrendLayerUrlByType(type);
+  const selectedField = fields.find(f => f.name === selectedFieldName);
+
+  const { quarters, attributesList } = await getAllQuarterAttributes(layerUrl, surveyYear, fields);
+  const values = attributesList.map(attrs => Number(attrs[selectedFieldName] ?? 0));
+
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+  const maxQuarter = quarters[values.indexOf(maxValue)];
+  const minQuarter = quarters[values.indexOf(minValue)];
+
+  const typeLabel = type === "business" ? "Businesses" : "Employees";
+
+  trendHighestQuarterEl.textContent = maxQuarter;
+  trendHighestValueEl.textContent =
+    `${maxValue.toLocaleString()} ${type === "business" ? "businesses" : "employees"}`;
+
+  trendLowestQuarterEl.textContent = minQuarter;
+  trendLowestValueEl.textContent =
+    `${minValue.toLocaleString()} ${type === "business" ? "businesses" : "employees"}`;
+
+  destroyChart(trendLineChart);
+
+  trendLineChart = createTrendLineChart(
+    trendLineCanvas,
+    `${typeLabel} – ${selectedField.label} (${surveyYear})`,
+    quarters,
+    values,
+    type === "business" ? "Number of Businesses" : "Number of Employees"
+  );
+
+  trendSummaryEl.textContent = buildTrendSummary(
+    `${typeLabel} in ${surveyYear}`,
+    selectedField.label,
+    quarters,
+    values
+  );
+}
+
 
 /* -----------------------------
    SECTION 2: Employees Origin
@@ -921,6 +1327,23 @@ function renderOfficeTrendCharts(historyFeatures) {
   );
 }
 
+function populateOfficeYearOptions() {
+  const officeYearEl = document.getElementById("officeYear");
+  if (!officeYearEl) return;
+
+  const startYear = 1999;
+  const endYear = new Date().getFullYear() + 1;
+
+  officeYearEl.innerHTML = `<option value="">Select year</option>`;
+
+  for (let year = endYear; year >= startYear; year--) {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = String(year);
+    officeYearEl.appendChild(option);
+  }
+}
+
 async function loadOfficeStats() {
   const { year, quarter, area } = getOfficeFilters();
 
@@ -1132,13 +1555,22 @@ function renderRevComparisonChart(record) {
         legend: { display: false }
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: value => Number(value).toLocaleString()
-          }
-        }
-      }
+  y: {
+    beginAtZero: true,
+    title: {
+  display: true,
+  text: "Number of People",
+  color: "#5b6470",
+  font: {
+    size: 13,
+    weight: "400"
+  }
+},
+    ticks: {
+      callback: value => Number(value).toLocaleString()
+    }
+  }
+}
     }
   });
 }
@@ -1204,13 +1636,22 @@ function renderRevTrendChart(features) {
         }
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: value => Number(value).toLocaleString()
-          }
-        }
+  y: {
+    beginAtZero: true,
+    title: {
+      display: true,
+      text: "Number of People",
+      color: "#5b6470",
+      font: {
+        size: 12,
+        weight: "400"
       }
+    },
+    ticks: {
+      callback: value => Number(value).toLocaleString()
+    }
+  }
+}
     }
   });
 }
@@ -1337,6 +1778,45 @@ if (revAnalyticsAreaEl) {
   revAnalyticsAreaEl.addEventListener("change", loadRevAnalytics);
 }
 
+[compareYearAEl, compareQuarterAEl, compareYearBEl, compareQuarterBEl].forEach(el => {
+  if (el) {
+    el.addEventListener("change", () => {
+      loadComparisonAnalytics().catch(err => {
+        console.error(err);
+        alert("Could not load comparison analytics: " + err.message);
+      });
+    });
+  }
+});
+
+if (trendTypeEl) {
+  trendTypeEl.addEventListener("change", () => {
+    populateTrendIndustryOptions();
+    loadTrendAnalytics().catch(err => {
+      console.error(err);
+      alert("Could not load trend analytics: " + err.message);
+    });
+  });
+}
+
+if (trendIndustryEl) {
+  trendIndustryEl.addEventListener("change", () => {
+    loadTrendAnalytics().catch(err => {
+      console.error(err);
+      alert("Could not load trend analytics: " + err.message);
+    });
+  });
+}
+
+if (trendYearEl) {
+  trendYearEl.addEventListener("change", () => {
+    loadTrendAnalytics().catch(err => {
+      console.error(err);
+      alert("Could not load trend analytics: " + err.message);
+    });
+  });
+}
+
 /* -----------------------------
    Init
 ----------------------------- */
@@ -1348,6 +1828,18 @@ loadAnalytics().catch(err => {
   console.error(err);
   alert("Could not load analytics: " + err.message);
 });
+
+loadComparisonAnalytics().catch(err => {
+  console.error(err);
+});
+
+populateTrendIndustryOptions();
+
+loadTrendAnalytics().catch(err => {
+  console.error(err);
+});
+
+populateOfficeYearOptions();
 
 loadOfficeStats().catch(err => {
   console.error(err);
